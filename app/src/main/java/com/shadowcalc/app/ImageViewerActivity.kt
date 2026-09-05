@@ -21,9 +21,11 @@ class ImageViewerActivity : AppCompatActivity() {
         val path = intent.getStringExtra("path") ?: return finish()
         val file = File(path)
         val decrypted = vaultManager.decryptFile(file)
-        decrypted?.let {
-            Glide.with(this).load(it).into(binding.imageView)
-        } ?: Toast.makeText(this, "Cannot decrypt image", Toast.LENGTH_SHORT).show()
+        if (decrypted == null) {
+            Toast.makeText(this, "Cannot decrypt", Toast.LENGTH_SHORT).show()
+            return finish()
+        }
+        Glide.with(this).load(decrypted).into(binding.imageView)
         binding.btnBack.setOnClickListener { finish() }
     }
 }

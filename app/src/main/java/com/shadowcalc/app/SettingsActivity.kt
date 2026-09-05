@@ -32,16 +32,15 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnRecovery.setOnClickListener { showRecoveryDialog() }
         binding.btnForgotPin.setOnClickListener { showForgotPinDialog() }
         binding.btnBiometric.setOnClickListener { toggleBiometric() }
-        binding.btnAutoLock.setOnClickListener { showAutoLockDialog() }
-        binding.btnPanic.setOnClickListener { togglePanic() }
+        binding.btnTheme.setOnClickListener { showThemePicker() }
         binding.btnReset.setOnClickListener { showResetDialog() }
     }
 
     private fun refreshUI() {
         binding.switchBiometric.isChecked = securityManager.isBiometricEnabled()
-        binding.switchPanic.isChecked = securityManager.isPanicEnabled()
-        binding.tvAutoLock.text = "${securityManager.getAutoLockMinutes()} min"
         binding.tvDecoyStatus.text = if (securityManager.hasDecoyPin()) "Active" else "Not set"
+        val accentName = ThemeManager.getAccentNameList().find { it.first == securityManager.getThemeAccent() }?.second ?: "Neon Green"
+        binding.tvTheme.text = accentName
     }
 
     private fun showChangePinDialog() {
@@ -143,33 +142,26 @@ class SettingsActivity : AppCompatActivity() {
         Toast.makeText(this, if (enabled) "Biometric enabled" else "Biometric disabled", Toast.LENGTH_SHORT).show()
     }
 
-    private fun showAutoLockDialog() {
-        val minutes = arrayOf("1 min", "2 min", "5 min", "10 min", "15 min", "30 min", "Never")
-        val values = arrayOf(1, 2, 5, 10, 15, 30, 0)
-        val current = securityManager.getAutoLockMinutes()
-        val selected = values.indexOf(current).coerceAtLeast(0)
+    private fun showThemePicker() {
+        val accents = ThemeManager.getAccentNameList()
+        val names = accents.map { it.second }.toTypedArray()
+        val current = accents.indexOfFirst { it.first == securityManager.getThemeAccent() }.coerceAtLeast(0)
         AlertDialog.Builder(this, R.style.DarkAlertDialog)
-            .setTitle("Auto-Lock Timer")
-            .setSingleChoiceItems(minutes, selected) { dialog, which ->
-                securityManager.setAutoLockMinutes(values[which])
+            .setTitle("Choose Accent Color")
+            .setSingleChoiceItems(names, current) { dialog, which ->
+                securityManager.setThemeAccent(accents[which].first)
                 refreshUI()
+                Toast.makeText(this, "Theme updated to ${accents[which].second}", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun togglePanic() {
-        val enabled = !securityManager.isPanicEnabled()
-        securityManager.setPanicEnabled(enabled)
-        binding.switchPanic.isChecked = enabled
-        Toast.makeText(this, if (enabled) "Panic shake enabled" else "Panic shake disabled", Toast.LENGTH_SHORT).show()
-    }
-
     private fun showResetDialog() {
         AlertDialog.Builder(this, R.style.DarkAlertDialog)
             .setTitle("Reset Everything?")
-            .setMessage("This will delete ALL hidden files, notes, passwords, and reset PIN to 1234. Cannot be undone.")
+            .setMessage("This will delete ALL hidden files, notes, and reset PIN to 1234. Cannot be undone.")
             .setPositiveButton("Reset") { _, _ ->
                 securityManager.resetToDefault()
                 VaultManager(this, securityManager).emptyTrash()

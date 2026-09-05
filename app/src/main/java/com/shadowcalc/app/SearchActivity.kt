@@ -20,7 +20,6 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var securityManager: SecurityManager
     private lateinit var vaultManager: VaultManager
     private lateinit var noteManager: NoteManager
-    private lateinit var passwordManager: PasswordManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,10 +28,9 @@ class SearchActivity : AppCompatActivity() {
         securityManager = SecurityManager(this)
         vaultManager = VaultManager(this, securityManager)
         noteManager = NoteManager(this, securityManager)
-        passwordManager = PasswordManager(this, securityManager)
 
         val query = intent.getStringExtra("query") ?: ""
-        binding.tvQuery.text = "Results for \"$query\""
+        binding.tvQuery.text = "Results for "$query""
         binding.btnBack.setOnClickListener { finish() }
 
         performSearch(query)
@@ -42,31 +40,21 @@ class SearchActivity : AppCompatActivity() {
         val results = mutableListOf<SearchResult>()
         val q = query.lowercase()
 
-        // Images
         vaultManager.getImages().forEach { f ->
             if (f.name.lowercase().contains(q)) results.add(SearchResult(f.name, "Image", f, "image"))
         }
-        // Videos
         vaultManager.getVideos().forEach { f ->
             if (f.name.lowercase().contains(q)) results.add(SearchResult(f.name, "Video", f, "video"))
         }
-        // Audio
         vaultManager.getAudio().forEach { f ->
             if (f.name.lowercase().contains(q)) results.add(SearchResult(f.name, "Audio", f, "audio"))
         }
-        // Files
         vaultManager.getFiles().forEach { f ->
             if (f.name.lowercase().contains(q)) results.add(SearchResult(f.name, "File", f, "file"))
         }
-        // Notes
         noteManager.loadNotes().forEach { n ->
             if (n.title.lowercase().contains(q) || n.content.lowercase().contains(q))
                 results.add(SearchResult(n.title, "Note", null, "note", n))
-        }
-        // Passwords
-        passwordManager.loadEntries().forEach { p ->
-            if (p.title.lowercase().contains(q) || p.url.lowercase().contains(q))
-                results.add(SearchResult(p.title, "Password", null, "password", entry = p))
         }
 
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
@@ -74,7 +62,7 @@ class SearchActivity : AppCompatActivity() {
         binding.tvEmpty.visibility = if (results.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    data class SearchResult(val name: String, val type: String, val file: File?, val fileType: String, val note: Note? = null, val entry: PasswordEntry? = null)
+    data class SearchResult(val name: String, val type: String, val file: File?, val fileType: String, val note: Note? = null)
 
     private inner class SearchAdapter(private val list: List<SearchResult>) : RecyclerView.Adapter<SearchAdapter.VH>() {
         inner class VH(v: View) : RecyclerView.ViewHolder(v) {
@@ -93,7 +81,6 @@ class SearchActivity : AppCompatActivity() {
                 "Audio" -> R.drawable.ic_audio
                 "File" -> R.drawable.ic_file
                 "Note" -> R.drawable.ic_note
-                "Password" -> R.drawable.ic_lock
                 else -> R.drawable.ic_file
             }
             h.icon.setImageResource(iconRes)
@@ -105,7 +92,6 @@ class SearchActivity : AppCompatActivity() {
                     "Audio" -> startActivity(Intent(this@SearchActivity, AudioPlayerActivity::class.java).putExtra("path", r.file!!.absolutePath))
                     "File" -> openFile(r.file!!)
                     "Note" -> startActivity(Intent(this@SearchActivity, NotesActivity::class.java))
-                    "Password" -> startActivity(Intent(this@SearchActivity, PasswordsActivity::class.java))
                 }
             }
         }

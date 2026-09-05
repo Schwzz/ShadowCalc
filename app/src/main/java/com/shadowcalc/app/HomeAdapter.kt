@@ -15,8 +15,8 @@ class HomeAdapter(private val items: List<HomeItem>) : RecyclerView.Adapter<Home
     override fun onCreateViewHolder(p: ViewGroup, t: Int) = VH(LayoutInflater.from(p.context).inflate(R.layout.item_home, p, false))
     override fun onBindViewHolder(h: VH, i: Int) {
         val item = items[i]
-        h.name.text = item.name
         h.icon.setImageResource(item.iconRes)
+        h.name.text = item.name
         h.itemView.setOnClickListener { item.action() }
     }
     override fun getItemCount() = items.size

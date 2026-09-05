@@ -10,15 +10,14 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.shadowcalc.app.databinding.ActivityNotesBinding
-import java.util.UUID
+import com.shadowcalc.app.databinding.DialogNoteBinding
 
 class NotesActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNotesBinding
     private lateinit var securityManager: SecurityManager
     private lateinit var noteManager: NoteManager
-    private var notes = mutableListOf<Note>()
+    private var editingNote: Note? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,62 +25,55 @@ class NotesActivity : AppCompatActivity() {
         setContentView(binding.root)
         securityManager = SecurityManager(this)
         noteManager = NoteManager(this, securityManager)
-        notes = noteManager.loadNotes().toMutableList()
         binding.btnBack.setOnClickListener { finish() }
         binding.btnAdd.setOnClickListener { showNoteDialog(null) }
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
         refresh()
     }
 
     private fun refresh() {
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
+        val notes = noteManager.loadNotes()
         binding.recyclerView.adapter = NoteAdapter(notes)
         binding.tvEmpty.visibility = if (notes.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun showNoteDialog(note: Note?) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_note, null)
-        val etTitle = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etTitle)
-        val etContent = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etContent)
-        note?.let { etTitle.setText(it.title); etContent.setText(it.content) }
-
-        MaterialAlertDialogBuilder(this, R.style.DarkAlertDialog)
+        editingNote = note
+        val dialogBinding = DialogNoteBinding.inflate(layoutInflater)
+        note?.let {
+            dialogBinding.etTitle.setText(it.title)
+            dialogBinding.etContent.setText(it.content)
+        }
+        AlertDialog.Builder(this, R.style.DarkAlertDialog)
             .setTitle(if (note == null) "New Note" else "Edit Note")
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setPositiveButton("Save") { _, _ ->
-                val title = etTitle.text.toString().ifEmpty { "Untitled" }
-                val content = etContent.text.toString()
-                if (note != null) {
-                    notes.remove(note)
-                    notes.add(0, Note(note.id, title, content, System.currentTimeMillis(), note.folder))
-                } else {
-                    notes.add(0, Note(UUID.randomUUID().toString(), title, content, System.currentTimeMillis(), ""))
+                val title = dialogBinding.etTitle.text.toString()
+                val content = dialogBinding.etContent.text.toString()
+                if (title.isNotEmpty()) {
+                    if (note == null) noteManager.saveNote(title, content)
+                    else noteManager.updateNote(note.id, title, content)
+                    Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
+                    refresh()
                 }
-                noteManager.saveNotes(notes)
-                refresh()
             }
             .setNegativeButton("Cancel", null)
+            .apply { if (note != null) setNeutralButton("Delete") { _, _ -> noteManager.deleteNote(note.id); refresh() } }
             .show()
     }
 
-    private inner class NoteAdapter(private val list: List<Note>) : RecyclerView.Adapter<NoteAdapter.VH>() {
+    private inner class NoteAdapter(private val notes: List<Note>) : RecyclerView.Adapter<NoteAdapter.VH>() {
         inner class VH(v: View) : RecyclerView.ViewHolder(v) {
             val title: TextView = v.findViewById(R.id.tvTitle)
             val preview: TextView = v.findViewById(R.id.tvPreview)
         }
         override fun onCreateViewHolder(p: ViewGroup, t: Int) = VH(LayoutInflater.from(p.context).inflate(R.layout.item_note, p, false))
         override fun onBindViewHolder(h: VH, i: Int) {
-            val n = list[i]
+            val n = notes[i]
             h.title.text = n.title
-            h.preview.text = n.content.take(60) + if (n.content.length > 60) "..." else ""
+            h.preview.text = n.content
             h.itemView.setOnClickListener { showNoteDialog(n) }
-            h.itemView.setOnLongClickListener {
-                AlertDialog.Builder(this@NotesActivity, R.style.DarkAlertDialog)
-                    .setTitle("Delete note?")
-                    .setPositiveButton("Delete") { _, _ -> notes.remove(n); noteManager.saveNotes(notes); refresh() }
-                    .setNegativeButton("Cancel", null).show()
-                true
-            }
         }
-        override fun getItemCount() = list.size
+        override fun getItemCount() = notes.size
     }
 }

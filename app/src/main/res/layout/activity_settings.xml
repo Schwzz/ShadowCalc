@@ -188,7 +188,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Privacy"
+            android:text="Appearance"
             android:textColor="@color/accent"
             android:textSize="14sp"
             android:textStyle="bold"
@@ -196,7 +196,7 @@
             android:layout_marginBottom="8dp" />
 
         <LinearLayout
-            android:id="@+id/btnAutoLock"
+            android:id="@+id/btnTheme"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -207,7 +207,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_timer" />
+                android:src="@drawable/ic_settings" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -219,49 +219,18 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Auto-Lock"
+                    android:text="Accent Color"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
                 <TextView
-                    android:id="@+id/tvAutoLock"
+                    android:id="@+id/tvTheme"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="5 min"
+                    android:text="Neon Green"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/btnPanic"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="16dp"
-            android:background="?attr/selectableItemBackground">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_shake" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Panic Shake to Lock"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:layout_marginStart="16dp" />
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/switchPanic"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:clickable="false"
-                android:focusable="false" />
         </LinearLayout>
 
         <TextView

@@ -26,37 +26,36 @@ class AudioPlayerActivity : AppCompatActivity() {
         vaultManager = VaultManager(this, securityManager)
         val path = intent.getStringExtra("path") ?: return finish()
         val file = File(path)
-
-        val decrypted = vaultManager.decryptFile(file) ?: return Toast.makeText(this, "Cannot decrypt", Toast.LENGTH_SHORT).show().also { finish() }
+        val decrypted = vaultManager.decryptFile(file)
+        if (decrypted == null) {
+            Toast.makeText(this, "Cannot decrypt", Toast.LENGTH_SHORT).show()
+            return finish()
+        }
         val temp = File(cacheDir, "temp_audio_" + System.currentTimeMillis() + ".mp3")
         temp.writeBytes(decrypted)
+        binding.tvTitle.text = file.name.removeSuffix(".enc").removePrefix("file_")
+        binding.btnBack.setOnClickListener { finish() }
 
         mediaPlayer = MediaPlayer().apply {
             setDataSource(temp.absolutePath)
             prepare()
+            binding.seekBar.max = duration
+            binding.tvTotal.text = formatTime(duration)
             start()
+            binding.btnPlayPause.setImageResource(R.drawable.ic_pause)
         }
-
-        binding.tvTitle.text = file.name
-        binding.seekBar.max = mediaPlayer!!.duration
-
-        runnable = Runnable {
-            mediaPlayer?.let {
-                binding.seekBar.progress = it.currentPosition
-                binding.tvCurrent.text = formatTime(it.currentPosition)
-                binding.tvTotal.text = formatTime(it.duration)
-            }
-            handler.postDelayed(runnable!!, 500)
-        }
-        handler.post(runnable!!)
 
         binding.btnPlayPause.setOnClickListener {
             mediaPlayer?.let {
-                if (it.isPlaying) { it.pause(); binding.btnPlayPause.setImageResource(R.drawable.ic_play) }
-                else { it.start(); binding.btnPlayPause.setImageResource(R.drawable.ic_pause) }
+                if (it.isPlaying) {
+                    it.pause()
+                    binding.btnPlayPause.setImageResource(R.drawable.ic_play)
+                } else {
+                    it.start()
+                    binding.btnPlayPause.setImageResource(R.drawable.ic_pause)
+                }
             }
         }
-        binding.btnBack.setOnClickListener { finish() }
 
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -65,6 +64,17 @@ class AudioPlayerActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+
+        runnable = Runnable {
+            mediaPlayer?.let {
+                if (it.isPlaying) {
+                    binding.seekBar.progress = it.currentPosition
+                    binding.tvCurrent.text = formatTime(it.currentPosition)
+                }
+            }
+            handler.postDelayed(runnable!!, 500)
+        }
+        handler.post(runnable!!)
     }
 
     private fun formatTime(ms: Int): String {
@@ -76,7 +86,7 @@ class AudioPlayerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacksAndMessages(null)
+        runnable?.let { handler.removeCallbacks(it) }
         mediaPlayer?.release()
         mediaPlayer = null
     }

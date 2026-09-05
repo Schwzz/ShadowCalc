@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="16dp">
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
@@ -13,33 +13,30 @@
             android:id="@+id/etOldPin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="numberPassword"
-            android:textColor="@color/text_primary" />
+            android:inputType="numberPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="New PIN"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="8dp"
+        android:hint="New PIN">
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etNewPin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="numberPassword"
-            android:textColor="@color/text_primary" />
+            android:inputType="numberPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Confirm New PIN"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="8dp"
+        android:hint="Confirm PIN">
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etConfirmPin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="numberPassword"
-            android:textColor="@color/text_primary" />
+            android:inputType="numberPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 </LinearLayout>

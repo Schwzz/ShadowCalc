@@ -30,13 +30,13 @@
             android:textStyle="bold"
             android:layout_marginStart="12dp" />
 
-        <Button
+        <ImageButton
             android:id="@+id/btnEmpty"
-            android:layout_width="wrap_content"
+            android:layout_width="40dp"
             android:layout_height="40dp"
-            android:text="Empty"
-            android:textColor="@color/error"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_delete"
+            android:contentDescription="Empty Trash" />
     </LinearLayout>
 
     <TextView

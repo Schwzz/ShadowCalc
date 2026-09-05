@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -12,6 +14,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +25,9 @@ class FileManagerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityVaultBinding
     private lateinit var securityManager: SecurityManager
     private lateinit var vaultManager: VaultManager
+    private var actionMode: ActionMode? = null
+    private val selectedFiles = mutableSetOf<File>()
+    private var isSelectionMode = false
     private val pickFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { importFile(it) } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,38 +42,97 @@ class FileManagerActivity : AppCompatActivity() {
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
     }
     override fun onResume() { super.onResume(); refresh() }
+
     private fun refresh() {
+        selectedFiles.clear(); isSelectionMode = false; actionMode?.finish()
         val files = vaultManager.getFiles()
         binding.recyclerView.adapter = FileAdapter(files)
         binding.tvEmpty.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
     }
+
     private fun importFile(uri: Uri) {
-        if (vaultManager.encryptAndStore(uri, this, "file")) { Toast.makeText(this, "File hidden", Toast.LENGTH_SHORT).show(); refresh() }
-        else { Toast.makeText(this, "Failed", Toast.LENGTH_SHORT).show() }
+        if (vaultManager.encryptAndStore(uri, this, "file")) {
+            Toast.makeText(this, "File hidden", Toast.LENGTH_SHORT).show(); refresh()
+        } else { Toast.makeText(this, "Failed", Toast.LENGTH_SHORT).show() }
     }
+
+    private fun startSelectionMode() {
+        if (isSelectionMode) return
+        isSelectionMode = true
+        actionMode = startSupportActionMode(object : ActionMode.Callback {
+            override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                menuInflater.inflate(R.menu.menu_selection, menu); return true
+            }
+            override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?) = false
+            override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+                when (item?.itemId) {
+                    R.id.action_delete -> confirmDeleteSelected()
+                    R.id.action_unhide -> confirmUnhideSelected()
+                }
+                return true
+            }
+            override fun onDestroyActionMode(mode: ActionMode?) {
+                isSelectionMode = false; selectedFiles.clear()
+                (binding.recyclerView.adapter as? FileAdapter)?.notifyDataSetChanged()
+            }
+        })
+    }
+
+    private fun confirmDeleteSelected() {
+        AlertDialog.Builder(this, R.style.DarkAlertDialog)
+            .setTitle("Move ${selectedFiles.size} item(s) to Trash?")
+            .setPositiveButton("Trash") { _, _ -> selectedFiles.forEach { vaultManager.moveToTrash(it, "file") }; refresh() }
+            .setNegativeButton("Cancel", null).show()
+    }
+
+    private fun confirmUnhideSelected() {
+        AlertDialog.Builder(this, R.style.DarkAlertDialog)
+            .setTitle("Restore ${selectedFiles.size} item(s)?")
+            .setPositiveButton("Restore") { _, _ ->
+                var success = 0
+                selectedFiles.forEach { if (vaultManager.unhideToPublic(this, it, "file")) success++ }
+                Toast.makeText(this, "$success restored", Toast.LENGTH_SHORT).show(); refresh()
+            }
+            .setNegativeButton("Cancel", null).show()
+    }
+
+    private fun updateActionModeTitle() { actionMode?.title = "${selectedFiles.size} selected" }
+
     private inner class FileAdapter(private val files: List<File>) : RecyclerView.Adapter<FileAdapter.VH>() {
         inner class VH(v: View) : RecyclerView.ViewHolder(v) {
             val name: TextView = v.findViewById(R.id.tvName)
-            val del: ImageView = v.findViewById(R.id.btnDelete)
+            val check: ImageView = v.findViewById(R.id.ivCheck)
         }
         override fun onCreateViewHolder(p: ViewGroup, t: Int) = VH(LayoutInflater.from(p.context).inflate(R.layout.item_file, p, false))
         override fun onBindViewHolder(h: VH, i: Int) {
             val file = files[i]
             h.name.text = file.name
+            val isSelected = selectedFiles.contains(file)
+            h.check.visibility = if (isSelected) View.VISIBLE else View.GONE
+            h.itemView.alpha = if (isSelected) 0.6f else 1.0f
+
             h.itemView.setOnClickListener {
-                val decrypted = vaultManager.decryptFile(file) ?: return@setOnClickListener
-                val temp = File(cacheDir, "temp_" + System.currentTimeMillis() + "_" + file.name.removeSuffix(".enc"))
-                temp.writeBytes(decrypted)
-                val uri = FileProvider.getUriForFile(this@FileManagerActivity, "${packageName}.provider", temp)
-                val intent = Intent(Intent.ACTION_VIEW).setDataAndType(uri, "*/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                try { startActivity(intent) } catch (_: Exception) { Toast.makeText(this@FileManagerActivity, "No app to open file", Toast.LENGTH_SHORT).show() }
+                if (isSelectionMode) { toggleSelection(file); notifyItemChanged(i) }
+                else { openFile(file) }
             }
-            h.del.setOnClickListener {
-                AlertDialog.Builder(this@FileManagerActivity, R.style.DarkAlertDialog)
-                    .setTitle("Move to Trash?").setPositiveButton("Trash") { _, _ -> vaultManager.moveToTrash(file, "file"); refresh() }
-                    .setNegativeButton("Cancel", null).show()
+            h.itemView.setOnLongClickListener {
+                if (!isSelectionMode) startSelectionMode()
+                toggleSelection(file); notifyItemChanged(i); true
             }
         }
         override fun getItemCount() = files.size
+        private fun toggleSelection(file: File) {
+            if (selectedFiles.contains(file)) selectedFiles.remove(file) else selectedFiles.add(file)
+            updateActionModeTitle(); if (selectedFiles.isEmpty()) actionMode?.finish()
+        }
+    }
+
+    private fun openFile(file: File) {
+        val decrypted = vaultManager.decryptFile(file) ?: return
+        val temp = File(cacheDir, "temp_" + System.currentTimeMillis() + "_" + file.name.removeSuffix(".enc"))
+        temp.writeBytes(decrypted)
+        val uri = FileProvider.getUriForFile(this, "${packageName}.provider", temp)
+        val intent = Intent(Intent.ACTION_VIEW).setDataAndType(uri, "*/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try { startActivity(intent) } catch (_: Exception) { Toast.makeText(this, "No app to open file", Toast.LENGTH_SHORT).show() }
     }
 }

@@ -14,7 +14,7 @@ class SecurityManager(context: Context) {
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
     private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
-        context, "shadow_secure_prefs_v3", masterKey,
+        context, "shadow_secure_prefs_v4", masterKey,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
@@ -24,10 +24,9 @@ class SecurityManager(context: Context) {
         private const val KEY_RECOVERY_Q = "recovery_q"
         private const val KEY_RECOVERY_A = "recovery_a"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
-        private const val KEY_AUTO_LOCK_MIN = "auto_lock_min"
-        private const val KEY_PANIC_ENABLED = "panic_enabled"
+        private const val KEY_THEME_ACCENT = "theme_accent"
         private const val DEFAULT_PIN = "1234"
-        private const val SALT = "ShadowCalcV3Salt!!"
+        private const val SALT = "ShadowCalcV4Salt!!"
     }
 
     fun getPin(): String = prefs.getString(KEY_PIN, DEFAULT_PIN) ?: DEFAULT_PIN
@@ -50,11 +49,8 @@ class SecurityManager(context: Context) {
     fun isBiometricEnabled(): Boolean = prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
     fun setBiometricEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
 
-    fun getAutoLockMinutes(): Int = prefs.getInt(KEY_AUTO_LOCK_MIN, 5)
-    fun setAutoLockMinutes(min: Int) = prefs.edit().putInt(KEY_AUTO_LOCK_MIN, min).apply()
-
-    fun isPanicEnabled(): Boolean = prefs.getBoolean(KEY_PANIC_ENABLED, true)
-    fun setPanicEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_PANIC_ENABLED, enabled).apply()
+    fun getThemeAccent(): String = prefs.getString(KEY_THEME_ACCENT, "green") ?: "green"
+    fun setThemeAccent(accent: String) = prefs.edit().putString(KEY_THEME_ACCENT, accent).apply()
 
     fun resetToDefault() {
         prefs.edit().clear().putString(KEY_PIN, DEFAULT_PIN).apply()

@@ -8,20 +8,18 @@
 
     <TextView
         android:id="@+id/tvTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="@color/text_primary"
         android:textSize="16sp"
-        android:textStyle="bold"
-        android:ellipsize="end"
-        android:maxLines="1" />
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tvPreview"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="@color/text_secondary"
-        android:textSize="13sp"
+        android:textSize="14sp"
         android:layout_marginTop="4dp"
         android:ellipsize="end"
         android:maxLines="2" />
