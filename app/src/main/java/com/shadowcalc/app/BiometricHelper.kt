@@ -21,7 +21,7 @@ class BiometricHelper(private val context: Context) {
         val executor = ContextCompat.getMainExecutor(context)
         val prompt = BiometricPrompt(activity, executor,
             object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: AuthenticationResult) {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
                     onSuccess()
                 }
