@@ -93,7 +93,7 @@ class BrowserActivity : AppCompatActivity() {
         binding.webView.evaluateJavascript(
             "(function(){var v=document.querySelector('video');if(v&&v.src)return v.src;var s=document.querySelectorAll('source');for(var i=0;i<s.length;i++)if(s[i].src)return s[i].src;return '';})()"
         ) { result ->
-            val videoUrl = result?.trim(''"') ?: ""
+            val videoUrl = result?.trim('"') ?: ""
             if (videoUrl.isNotEmpty() && videoUrl.startsWith("http")) {
                 downloadFile(videoUrl, binding.webView.settings.userAgentString, "", "video/mp4")
             } else {
