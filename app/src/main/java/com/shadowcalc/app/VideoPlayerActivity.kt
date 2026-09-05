@@ -11,40 +11,31 @@ import java.io.File
 class VideoPlayerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityVideoPlayerBinding
     private lateinit var vaultManager: VaultManager
+    private var tempFile: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityVideoPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
         vaultManager = VaultManager(this)
-
-        val filePath = intent.getStringExtra("file_path")
-        if (filePath != null) {
-            val file = File(filePath)
-            val decrypted = vaultManager.decryptFile(file)
+        val path = intent.getStringExtra("path")
+        if (path != null) {
+            val decrypted = vaultManager.decryptFile(File(path))
             if (decrypted != null) {
-                // Write decrypted bytes to temp file for MediaPlayer
-                val tempFile = File(cacheDir, "temp_video_" + System.currentTimeMillis() + ".mp4")
-                tempFile.writeBytes(decrypted)
-                val uri = FileProvider.getUriForFile(this, "${packageName}.provider", tempFile)
-                binding.videoView.setVideoURI(uri)
-                val mediaController = MediaController(this)
-                mediaController.setAnchorView(binding.videoView)
-                binding.videoView.setMediaController(mediaController)
-                binding.videoView.start()
+                tempFile = File(cacheDir, "temp_video_" + System.currentTimeMillis() + ".mp4")
+                tempFile?.writeBytes(decrypted)
+                tempFile?.let {
+                    val uri = FileProvider.getUriForFile(this, "${packageName}.provider", it)
+                    binding.videoView.setVideoURI(uri)
+                    val mc = MediaController(this)
+                    mc.setAnchorView(binding.videoView)
+                    binding.videoView.setMediaController(mc)
+                    binding.videoView.setOnPreparedListener { mp -> mp.start() }
+                }
             }
         }
-
-        binding.btnClose.setOnClickListener {
-            binding.videoView.stopPlayback()
-            finish()
-        }
+        binding.btnClose.setOnClickListener { finish() }
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        binding.videoView.stopPlayback()
-        // Clean up temp files
-        cacheDir.listFiles()?.forEach { if (it.name.startsWith("temp_video_")) it.delete() }
-    }
+    override fun onPause() { super.onPause(); binding.videoView.pause() }
+    override fun onDestroy() { super.onDestroy(); binding.videoView.stopPlayback(); tempFile?.delete() }
 }

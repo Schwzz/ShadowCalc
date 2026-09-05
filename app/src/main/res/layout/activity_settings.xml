@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/dark_bg">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp"
+        android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="16dp">
+        <ImageView android:id="@+id/btnBack" android:layout_width="24dp" android:layout_height="24dp"
+            android:src="@drawable/ic_back" android:contentDescription="Back" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:text="Settings" android:textColor="@color/white" android:textSize="20sp" android:textStyle="bold" android:layout_marginStart="16dp" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="16dp">
+        <com.google.android.material.card.MaterialCardView android:id="@+id/btnChangePin"
+            android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/dark_surface" app:cardCornerRadius="16dp" app:strokeWidth="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="16dp">
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_lock" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="Change PIN" android:textColor="@color/white" android:textSize="16sp" android:layout_marginStart="16dp" />
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_forward" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/btnRecovery"
+            android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/dark_surface" app:cardCornerRadius="16dp" app:strokeWidth="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="16dp">
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_recovery" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="Recovery Setup" android:textColor="@color/white" android:textSize="16sp" android:layout_marginStart="16dp" />
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_forward" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/btnForgotPin"
+            android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/dark_surface" app:cardCornerRadius="16dp" app:strokeWidth="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="16dp">
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_help" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="Forgot PIN" android:textColor="@color/white" android:textSize="16sp" android:layout_marginStart="16dp" />
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_forward" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/btnReset"
+            android:layout_width="match_parent" android:layout_height="64dp"
+            app:cardBackgroundColor="#331111" app:cardCornerRadius="16dp" app:strokeWidth="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="16dp">
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_delete" app:tint="#FF5252" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="Reset Everything" android:textColor="#FF5252" android:textSize="16sp" android:layout_marginStart="16dp" />
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_forward" app:tint="#FF5252" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+</LinearLayout>

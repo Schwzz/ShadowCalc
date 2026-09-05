@@ -15,16 +15,11 @@ class ImageViewerActivity : AppCompatActivity() {
         binding = ActivityImageViewerBinding.inflate(layoutInflater)
         setContentView(binding.root)
         vaultManager = VaultManager(this)
-
-        val filePath = intent.getStringExtra("file_path")
-        if (filePath != null) {
-            val file = File(filePath)
-            val decrypted = vaultManager.decryptFile(file)
-            decrypted?.let {
-                Glide.with(this).load(it).into(binding.imageView)
-            }
+        val path = intent.getStringExtra("path")
+        if (path != null) {
+            val decrypted = vaultManager.decryptFile(File(path))
+            decrypted?.let { Glide.with(this).load(it).into(binding.imageView) }
         }
-
         binding.btnClose.setOnClickListener { finish() }
     }
 }

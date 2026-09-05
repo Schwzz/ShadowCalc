@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="64dp"
+    android:orientation="horizontal" android:gravity="center_vertical"
+    android:padding="12dp" android:layout_margin="4dp" android:background="@drawable/bg_card">
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+        <TextView android:id="@+id/tvName" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textColor="@color/white" android:textSize="14sp" android:maxLines="1" android:ellipsize="end" />
+        <TextView android:id="@+id/tvSize" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textColor="@color/gray_text" android:textSize="12sp" android:layout_marginTop="2dp" />
+    </LinearLayout>
+    <ImageView android:id="@+id/btnOpen" android:layout_width="32dp" android:layout_height="32dp"
+        android:src="@drawable/ic_go" android:padding="6dp" android:layout_marginEnd="8dp" android:contentDescription="Open" />
+    <ImageView android:id="@+id/btnDelete" android:layout_width="32dp" android:layout_height="32dp"
+        android:src="@drawable/ic_delete" android:padding="6dp" android:contentDescription="Delete" />
+</LinearLayout>
