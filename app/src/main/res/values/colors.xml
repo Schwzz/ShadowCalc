@@ -3,6 +3,8 @@
     <color name="bg_dark">#0F0F0F</color>
     <color name="bg_card">#1A1A1A</color>
     <color name="bg_surface">#242424</color>
+    <color name="dark_surface">#1A1A1A</color>
+    <color name="white">#FFFFFF</color>
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#9E9E9E</color>
     <color name="accent">#00E676</color>
