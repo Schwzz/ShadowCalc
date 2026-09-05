@@ -20,6 +20,7 @@ import java.io.File
 
 class FileManagerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityVaultBinding
+    private lateinit var securityManager: SecurityManager
     private lateinit var vaultManager: VaultManager
     private val pickFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { importFile(it) } }
 
@@ -27,7 +28,8 @@ class FileManagerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityVaultBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        vaultManager = VaultManager(this)
+        securityManager = SecurityManager(this)
+        vaultManager = VaultManager(this, securityManager)
         binding.tvTitle.text = "Files"
         binding.btnAdd.setOnClickListener { pickFile.launch("*/*") }
         binding.btnBack.setOnClickListener { finish() }

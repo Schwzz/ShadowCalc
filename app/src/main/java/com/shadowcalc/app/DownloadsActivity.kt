@@ -1,7 +1,7 @@
 package com.shadowcalc.app
 
-import android.content.Intent
-import android.net.Uri
+import android.app.DownloadManager
+import android.database.Cursor
 import android.os.Bundle
 import android.os.Environment
 import android.view.LayoutInflater
@@ -10,8 +10,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.shadowcalc.app.databinding.ActivityDownloadsBinding
@@ -26,53 +26,46 @@ class DownloadsActivity : AppCompatActivity() {
         setContentView(binding.root)
         binding.btnBack.setOnClickListener { finish() }
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        loadDownloads()
+        refresh()
     }
 
-    private fun loadDownloads() {
+    override fun onResume() { super.onResume(); refresh() }
+
+    private fun refresh() {
+        val downloads = getDownloadedFiles()
+        binding.recyclerView.adapter = DownloadAdapter(downloads)
+        binding.tvEmpty.visibility = if (downloads.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun getDownloadedFiles(): List<File> {
         val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val files = dir.listFiles()?.filter { it.length() > 0 }?.sortedByDescending { it.lastModified() } ?: emptyList()
-        binding.recyclerView.adapter = DownloadAdapter(files)
-        binding.tvEmpty.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
+        return dir.listFiles()?.filter { it.isFile }?.sortedByDescending { it.lastModified() } ?: emptyList()
     }
 
     private inner class DownloadAdapter(private val files: List<File>) : RecyclerView.Adapter<DownloadAdapter.VH>() {
         inner class VH(v: View) : RecyclerView.ViewHolder(v) {
             val name: TextView = v.findViewById(R.id.tvName)
             val size: TextView = v.findViewById(R.id.tvSize)
-            val btnOpen: ImageView = v.findViewById(R.id.btnOpen)
-            val btnDelete: ImageView = v.findViewById(R.id.btnDelete)
+            val del: ImageView = v.findViewById(R.id.btnDelete)
         }
         override fun onCreateViewHolder(p: ViewGroup, t: Int) = VH(LayoutInflater.from(p.context).inflate(R.layout.item_download, p, false))
         override fun onBindViewHolder(h: VH, i: Int) {
             val file = files[i]
             h.name.text = file.name
             h.size.text = formatSize(file.length())
-            h.btnOpen.setOnClickListener {
-                val uri = FileProvider.getUriForFile(this@DownloadsActivity, "${packageName}.provider", file)
-                val intent = Intent(Intent.ACTION_VIEW).setDataAndType(uri, getMimeType(file.name)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                try { startActivity(intent) } catch (_: Exception) { Toast.makeText(this@DownloadsActivity, "Cannot open file", Toast.LENGTH_SHORT).show() }
+            h.del.setOnClickListener {
+                AlertDialog.Builder(this@DownloadsActivity, R.style.DarkAlertDialog)
+                    .setTitle("Delete file?")
+                    .setPositiveButton("Delete") { _, _ -> file.delete(); refresh() }
+                    .setNegativeButton("Cancel", null).show()
             }
-            h.btnDelete.setOnClickListener { file.delete(); loadDownloads() }
         }
         override fun getItemCount() = files.size
 
-        private fun formatSize(size: Long): String {
-            return when {
-                size > 1024 * 1024 * 1024 -> String.format("%.2f GB", size / (1024.0 * 1024.0 * 1024.0))
-                size > 1024 * 1024 -> String.format("%.2f MB", size / (1024.0 * 1024.0))
-                size > 1024 -> String.format("%.2f KB", size / 1024.0)
-                else -> "$size B"
-            }
-        }
-        private fun getMimeType(name: String): String {
-            return when {
-                name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".avi") -> "video/*"
-                name.endsWith(".mp3") || name.endsWith(".wav") -> "audio/*"
-                name.endsWith(".jpg") || name.endsWith(".png") -> "image/*"
-                name.endsWith(".pdf") -> "application/pdf"
-                else -> "*/*"
-            }
+        private fun formatSize(bytes: Long): String {
+            if (bytes < 1024) return "$bytes B"
+            if (bytes < 1024 * 1024) return "${bytes / 1024} KB"
+            return "${bytes / (1024 * 1024)} MB"
         }
     }
 }

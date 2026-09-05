@@ -18,6 +18,7 @@ import java.io.File
 
 class ImageVaultActivity : AppCompatActivity() {
     private lateinit var binding: ActivityVaultBinding
+    private lateinit var securityManager: SecurityManager
     private lateinit var vaultManager: VaultManager
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { importFile(it) } }
 
@@ -25,7 +26,8 @@ class ImageVaultActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityVaultBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        vaultManager = VaultManager(this)
+        securityManager = SecurityManager(this)
+        vaultManager = VaultManager(this, securityManager)
         binding.tvTitle.text = "Images"
         binding.btnAdd.setOnClickListener { pickImage.launch("image/*") }
         binding.btnBack.setOnClickListener { finish() }

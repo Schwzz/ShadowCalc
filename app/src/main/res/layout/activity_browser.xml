@@ -1,36 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" android:layout_height="match_parent">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
-        android:orientation="vertical" android:background="@color/dark_bg">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="56dp"
-            android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="8dp">
-            <ImageView android:id="@+id/btnBack" android:layout_width="24dp" android:layout_height="24dp"
-                android:src="@drawable/ic_back" android:contentDescription="Back" />
-            <EditText android:id="@+id/etUrl" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1"
-                android:layout_marginHorizontal="8dp" android:background="@drawable/bg_input" android:hint="Search or type URL"
-                android:textColorHint="@color/gray_text" android:textColor="@color/white" android:paddingHorizontal="12dp"
-                android:textSize="14sp" android:singleLine="true" android:imeOptions="actionGo" android:inputType="textUri" />
-            <ImageView android:id="@+id/btnGo" android:layout_width="24dp" android:layout_height="24dp"
-                android:src="@drawable/ic_go" android:contentDescription="Go" />
-        </LinearLayout>
-        <ProgressBar android:id="@+id/progressBar" style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent" android:layout_height="2dp" android:indeterminate="true"
-            android:visibility="gone" android:progressTint="@color/accent" />
-        <WebView android:id="@+id/webView" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="48dp"
-            android:orientation="horizontal" android:gravity="center" android:background="@color/dark_surface">
-            <ImageView android:id="@+id/btnHome" android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1"
-                android:src="@drawable/ic_home" android:contentDescription="Home" />
-            <ImageView android:id="@+id/btnRefresh" android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1"
-                android:src="@drawable/ic_refresh" android:contentDescription="Refresh" />
-            <ImageView android:id="@+id/btnForward" android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1"
-                android:src="@drawable/ic_forward" android:contentDescription="Forward" />
-        </LinearLayout>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_dark">
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        android:progressTint="@color/accent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Back" />
+
+        <ImageButton
+            android:id="@+id/btnForward"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_add"
+            android:contentDescription="Forward" />
+
+        <EditText
+            android:id="@+id/etUrl"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="8dp"
+            android:background="@drawable/ic_file"
+            android:hint="URL"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
+            android:textSize="14sp"
+            android:paddingHorizontal="12dp"
+            android:inputType="textUri"
+            android:imeOptions="actionGo" />
+
+        <ImageButton
+            android:id="@+id/btnGo"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_search"
+            android:contentDescription="Go" />
+
+        <ImageButton
+            android:id="@+id/btnRefresh"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_settings"
+            android:contentDescription="Refresh" />
+
+        <ImageButton
+            android:id="@+id/btnHome"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_browser"
+            android:contentDescription="Home" />
     </LinearLayout>
-    <com.google.android.material.floatingactionbutton.FloatingActionButton android:id="@+id/fabDownload"
-        android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end"
-        android:layout_marginEnd="16dp" android:layout_marginBottom="72dp" android:src="@drawable/ic_download"
-        android:visibility="gone" app:backgroundTint="@color/accent" app:tint="@color/black" app:fabSize="normal" />
-</FrameLayout>
+
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabDownload"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_download"
+        android:visibility="gone"
+        android:contentDescription="Download" />
+</LinearLayout>

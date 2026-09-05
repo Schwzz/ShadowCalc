@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="dark_bg">#FF121212</color>
-    <color name="dark_surface">#FF1E1E1E</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="black">#FF000000</color>
-    <color name="gray_text">#FF9E9E9E</color>
-    <color name="divider">#FF2C2C2C</color>
-    <color name="accent">#FFBB86FC</color>
-    <color name="accent_dark">#FF3700B3</color>
-    <color name="button_number">#FF2C2C2C</color>
-    <color name="button_operator">#FF3D3D3D</color>
-    <color name="button_equals">#FFBB86FC</color>
+    <color name="bg_dark">#0F0F0F</color>
+    <color name="bg_card">#1A1A1A</color>
+    <color name="bg_surface">#242424</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#9E9E9E</color>
+    <color name="accent">#00E676</color>
+    <color name="accent_dark">#00C853</color>
+    <color name="error">#FF5252</color>
+    <color name="divider">#2A2A2A</color>
+    <color name="button_bg">#2A2A2A</color>
+    <color name="button_op_bg">#1E3A2F</color>
+    <color name="button_equals_bg">#00E676</color>
+    <color name="button_equals_text">#000000</color>
 </resources>

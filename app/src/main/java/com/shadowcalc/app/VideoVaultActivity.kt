@@ -12,11 +12,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.shadowcalc.app.databinding.ActivityVaultBinding
 import java.io.File
 
 class VideoVaultActivity : AppCompatActivity() {
     private lateinit var binding: ActivityVaultBinding
+    private lateinit var securityManager: SecurityManager
     private lateinit var vaultManager: VaultManager
     private val pickVideo = registerForActivityResult(ActivityResultContracts.GetContent()) { uri -> uri?.let { importFile(it) } }
 
@@ -24,7 +26,8 @@ class VideoVaultActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityVaultBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        vaultManager = VaultManager(this)
+        securityManager = SecurityManager(this)
+        vaultManager = VaultManager(this, securityManager)
         binding.tvTitle.text = "Videos"
         binding.btnAdd.setOnClickListener { pickVideo.launch("video/*") }
         binding.btnBack.setOnClickListener { finish() }
@@ -42,13 +45,13 @@ class VideoVaultActivity : AppCompatActivity() {
     }
     private inner class VideoAdapter(private val files: List<File>) : RecyclerView.Adapter<VideoAdapter.VH>() {
         inner class VH(v: View) : RecyclerView.ViewHolder(v) {
-            val thumb: ImageView = v.findViewById(R.id.ivThumb)
+            val img: ImageView = v.findViewById(R.id.ivThumb)
             val del: ImageView = v.findViewById(R.id.btnDelete)
         }
         override fun onCreateViewHolder(p: ViewGroup, t: Int) = VH(LayoutInflater.from(p.context).inflate(R.layout.item_media, p, false))
         override fun onBindViewHolder(h: VH, i: Int) {
             val file = files[i]
-            h.thumb.setImageResource(R.drawable.ic_video)
+            h.img.setImageResource(R.drawable.ic_video)
             h.itemView.setOnClickListener { startActivity(Intent(this@VideoVaultActivity, VideoPlayerActivity::class.java).putExtra("path", file.absolutePath)) }
             h.del.setOnClickListener {
                 AlertDialog.Builder(this@VideoVaultActivity, R.style.DarkAlertDialog)

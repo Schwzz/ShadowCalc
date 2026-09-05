@@ -16,6 +16,7 @@ import java.util.UUID
 
 class NotesActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNotesBinding
+    private lateinit var securityManager: SecurityManager
     private lateinit var noteManager: NoteManager
     private var notes = mutableListOf<Note>()
 
@@ -23,7 +24,8 @@ class NotesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNotesBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        noteManager = NoteManager(this)
+        securityManager = SecurityManager(this)
+        noteManager = NoteManager(this, securityManager)
         notes = noteManager.loadNotes().toMutableList()
         binding.btnBack.setOnClickListener { finish() }
         binding.btnAdd.setOnClickListener { showNoteDialog(null) }
@@ -50,9 +52,9 @@ class NotesActivity : AppCompatActivity() {
                 val content = etContent.text.toString()
                 if (note != null) {
                     notes.remove(note)
-                    notes.add(0, Note(note.id, title, content, System.currentTimeMillis()))
+                    notes.add(0, Note(note.id, title, content, System.currentTimeMillis(), note.folder))
                 } else {
-                    notes.add(0, Note(UUID.randomUUID().toString(), title, content, System.currentTimeMillis()))
+                    notes.add(0, Note(UUID.randomUUID().toString(), title, content, System.currentTimeMillis(), ""))
                 }
                 noteManager.saveNotes(notes)
                 refresh()

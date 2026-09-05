@@ -3,76 +3,57 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/dark_bg">
+    android:background="@color/bg_dark"
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp">
-        <ImageView
+        android:gravity="center_vertical">
+
+        <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
             android:contentDescription="Back" />
+
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Vault"
-            android:textColor="@color/white"
+            android:textColor="@color/text_primary"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginStart="16dp" />
-        <ImageView
+            android:layout_marginStart="12dp" />
+
+        <ImageButton
             android:id="@+id/btnAdd"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_add"
             android:contentDescription="Add" />
     </LinearLayout>
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/tvEmpty"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal"
-        android:gravity="center">
-        <Button
-            android:id="@+id/btnImages"
-            style="@style/TabButton"
-            android:text="Images" />
-        <Button
-            android:id="@+id/btnVideos"
-            style="@style/TabButton"
-            android:text="Videos" />
-        <Button
-            android:id="@+id/btnFiles"
-            style="@style/TabButton"
-            android:text="Files" />
-    </LinearLayout>
+        android:layout_height="wrap_content"
+        android:text="No items here"
+        android:textColor="@color/text_secondary"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone" />
 
-    <FrameLayout
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="8dp" />
-        <TextView
-            android:id="@+id/tvEmpty"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Nothing here yet
-Tap + to hide files"
-            android:textColor="@color/gray_text"
-            android:textSize="16sp"
-            android:gravity="center"
-            android:visibility="visible" />
-    </FrameLayout>
+        android:layout_height="match_parent"
+        android:layout_marginTop="12dp" />
 </LinearLayout>
