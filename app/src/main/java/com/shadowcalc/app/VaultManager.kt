@@ -73,6 +73,7 @@ class VaultManager(context: Context) {
         val dir = when (type) { "image" -> trashImages; "video" -> trashVideos; else -> trashFiles }
         return dir.listFiles()?.sortedByDescending { it.lastModified() } ?: emptyList()
     }
+    fun deleteFile(file: File): Boolean = file.delete()
     fun permanentDelete(file: File): Boolean = file.delete()
     fun emptyTrash() { listOf(trashImages, trashVideos, trashFiles).forEach { it.listFiles()?.forEach { f -> f.delete() } } }
 }
