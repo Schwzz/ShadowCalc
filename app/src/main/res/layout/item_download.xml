@@ -25,23 +25,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/text_primary"
-            android:textSize="16sp"
-            android:ellipsize="end"
-            android:maxLines="1" />
+            android:textSize="14sp" />
 
         <TextView
-            android:id="@+id/tvSize"
+            android:id="@+id/tvUrl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
             android:textSize="12sp" />
     </LinearLayout>
-
-    <ImageButton
-        android:id="@+id/btnDelete"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_delete"
-        android:contentDescription="Delete" />
 </LinearLayout>

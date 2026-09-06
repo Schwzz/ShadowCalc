@@ -1,16 +1,27 @@
 package com.shadowcalc.app
 
+import java.net.URL
+
 object AdBlocker {
     private val adDomains = setOf(
         "googleadservices.com", "googlesyndication.com", "google-analytics.com",
-        "doubleclick.net", "facebook.com/tr", "adsystem.amazon.com",
-        "advertising.com", "adnxs.com", "adsrvr.org", "taboola.com",
-        "outbrain.com", "scorecardresearch.com", "moatads.com",
-        "ads.yahoo.com", "advertising.yahoo.com", "adsafeprotected.com"
+        "doubleclick.net", "adservice.google.com", "facebook.com/tr",
+        "amazon-adsystem.com", "adsystem.amazon.com", "outbrain.com",
+        "taboola.com", "ads.yahoo.com", "advertising.com",
+        "adsrvr.org", "adsystem.com", "adsafeprotected.com",
+        "moatads.com", "scorecardresearch.com", "quantserve.com",
+        "googletagmanager.com", "googletagservices.com", "googleads.g.doubleclick.net"
     )
 
     fun isAd(url: String?): Boolean {
         if (url == null) return false
-        return adDomains.any { url.contains(it) }
+        return try {
+            val host = URL(url).host.lowercase()
+            adDomains.any { host.contains(it) || it.contains(host) }
+        } catch (e: Exception) {
+            false
+        }
     }
+
+    fun getBlockedDomains(): Set<String> = adDomains
 }

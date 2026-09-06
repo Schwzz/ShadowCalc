@@ -8,28 +8,38 @@
     android:background="?attr/selectableItemBackground">
 
     <ImageView
+        android:id="@+id/ivIcon"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:src="@drawable/ic_file"
         android:padding="8dp" />
 
-    <TextView
-        android:id="@+id/tvName"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textColor="@color/text_primary"
-        android:textSize="16sp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:layout_marginStart="12dp" />
+        android:orientation="vertical"
+        android:layout_marginStart="12dp">
+
+        <TextView
+            android:id="@+id/tvName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/tvUrl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+    </LinearLayout>
 
     <ImageView
         android:id="@+id/ivCheck"
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:src="@drawable/ic_browser"
-        android:visibility="gone"
-        android:layout_marginEnd="8dp"
-        android:contentDescription="Selected" />
+        android:visibility="gone" />
 </LinearLayout>

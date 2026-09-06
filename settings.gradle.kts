@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "ShadowCalcV4"
+rootProject.name = "ShadowCalc"
 include(":app")

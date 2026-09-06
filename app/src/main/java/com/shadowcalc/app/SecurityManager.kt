@@ -14,7 +14,7 @@ class SecurityManager(context: Context) {
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
     private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
-        context, "shadow_secure_prefs_v4", masterKey,
+        context, "shadow_secure_prefs_v5", masterKey,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
@@ -23,11 +23,15 @@ class SecurityManager(context: Context) {
         private const val KEY_DECOY_PIN = "decoy_pin"
         private const val KEY_RECOVERY_Q = "recovery_q"
         private const val KEY_RECOVERY_A = "recovery_a"
-        private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
         private const val KEY_THEME_ACCENT = "theme_accent"
+        private const val KEY_FIRST_TIME = "first_time_done"
+        private const val KEY_AUTO_LOCK_MINUTES = "auto_lock_minutes"
         private const val DEFAULT_PIN = "1234"
-        private const val SALT = "ShadowCalcV4Salt!!"
+        private const val SALT = "ShadowCalcV5Salt!!"
     }
+
+    fun isFirstTime(): Boolean = !prefs.getBoolean(KEY_FIRST_TIME, false)
+    fun setFirstTimeDone() = prefs.edit().putBoolean(KEY_FIRST_TIME, true).apply()
 
     fun getPin(): String = prefs.getString(KEY_PIN, DEFAULT_PIN) ?: DEFAULT_PIN
     fun setPin(pin: String) = prefs.edit().putString(KEY_PIN, pin).apply()
@@ -46,11 +50,11 @@ class SecurityManager(context: Context) {
     fun getRecoveryQuestion(): String = prefs.getString(KEY_RECOVERY_Q, "") ?: ""
     fun validateRecoveryAnswer(answer: String): Boolean = answer == (prefs.getString(KEY_RECOVERY_A, "") ?: "")
 
-    fun isBiometricEnabled(): Boolean = prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
-    fun setBiometricEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
-
     fun getThemeAccent(): String = prefs.getString(KEY_THEME_ACCENT, "green") ?: "green"
     fun setThemeAccent(accent: String) = prefs.edit().putString(KEY_THEME_ACCENT, accent).apply()
+
+    fun getAutoLockMinutes(): Int = prefs.getInt(KEY_AUTO_LOCK_MINUTES, 5)
+    fun setAutoLockMinutes(minutes: Int) = prefs.edit().putInt(KEY_AUTO_LOCK_MINUTES, minutes).apply()
 
     fun resetToDefault() {
         prefs.edit().clear().putString(KEY_PIN, DEFAULT_PIN).apply()

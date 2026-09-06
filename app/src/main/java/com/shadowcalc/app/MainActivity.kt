@@ -2,31 +2,39 @@ package com.shadowcalc.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.HapticFeedbackConstants
 import android.view.WindowManager
+import android.view.animation.AnimationUtils
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.shadowcalc.app.databinding.ActivityMainBinding
+import com.shadowcalc.app.databinding.DialogFirstTimeBinding
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var securityManager: SecurityManager
-    private lateinit var biometricHelper: BiometricHelper
     private var currentInput = ""
     private var lastValue = 0.0
     private var currentOp = ""
     private var isNewInput = true
+    private var wrongPinAttempts = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         securityManager = SecurityManager(this)
-        biometricHelper = BiometricHelper(this)
 
         setupCalculator()
-        setupBiometric()
+
+        if (securityManager.isFirstTime()) {
+            showFirstTimeSetup()
+        }
     }
 
     override fun onResume() {
@@ -35,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         lastValue = 0.0
         currentOp = ""
         isNewInput = true
+        wrongPinAttempts = 0
         updateDisplay()
     }
 
@@ -53,24 +62,55 @@ class MainActivity : AppCompatActivity() {
         binding.btnClear.setOnClickListener { it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP); clearAll() }
         binding.btnDelete.setOnClickListener { it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP); deleteLast() }
         binding.btnPlus.setOnClickListener { it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP); setOperation("+") }
-        binding.btnMinus.setOnClickListener { it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP); setOperation("-") }
+        binding.btnMinus.setOnClickListener { it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP); setOperation("−") }
         binding.btnMultiply.setOnClickListener { it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP); setOperation("×") }
         binding.btnDivide.setOnClickListener { it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP); setOperation("÷") }
         binding.btnEquals.setOnClickListener { it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP); onEqualsPressed() }
     }
 
-    private fun setupBiometric() {
-        if (securityManager.isBiometricEnabled() && biometricHelper.canAuthenticate()) {
-            binding.btnBiometric.visibility = android.view.View.VISIBLE
-            binding.btnBiometric.setOnClickListener {
-                biometricHelper.showBiometricPrompt(this,
-                    onSuccess = { launchHome(decoy = false) },
-                    onError = {}
-                )
+    private fun showFirstTimeSetup() {
+        val dialogBinding = DialogFirstTimeBinding.inflate(layoutInflater)
+        val dialog = MaterialAlertDialogBuilder(this, R.style.DarkAlertDialog)
+            .setView(dialogBinding.root)
+            .setCancelable(false)
+            .create()
+
+        dialogBinding.tvTitle.text = "Welcome"
+        dialogBinding.tvSubtitle.text = "Set a 4-digit backup code for calculator data recovery"
+        dialogBinding.tvStep.text = "Step 1 of 2"
+
+        var step = 1
+        var savedPin = ""
+
+        dialogBinding.btnContinue.setOnClickListener {
+            val pin = dialogBinding.etPin.text.toString()
+            when {
+                pin.length != 4 -> {
+                    dialogBinding.etPin.error = "Enter exactly 4 digits"
+                }
+                step == 1 -> {
+                    savedPin = pin
+                    dialogBinding.etPin.text?.clear()
+                    dialogBinding.etPin.hint = "Re-enter 4-digit code"
+                    dialogBinding.tvStep.text = "Step 2 of 2"
+                    dialogBinding.tvSubtitle.text = "Confirm your backup code"
+                    step = 2
+                }
+                step == 2 -> {
+                    if (pin == savedPin) {
+                        securityManager.setPin(savedPin)
+                        securityManager.setFirstTimeDone()
+                        dialog.dismiss()
+                        Toast.makeText(this, "Backup code set successfully", Toast.LENGTH_SHORT).show()
+                    } else {
+                        dialogBinding.etPin.error = "Codes do not match"
+                        dialogBinding.etPin.text?.clear()
+                    }
+                }
             }
-        } else {
-            binding.btnBiometric.visibility = android.view.View.GONE
         }
+
+        dialog.show()
     }
 
     private fun appendNumber(num: String) {
@@ -85,6 +125,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onEqualsPressed() {
+        // Check PIN first
         if (securityManager.validatePin(currentInput)) {
             currentInput = ""; updateDisplay()
             launchHome(decoy = false)
@@ -96,11 +137,12 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        // Normal calculator operation
         if (currentInput.isEmpty() || currentOp.isEmpty()) return
         val currentVal = currentInput.toDoubleOrNull() ?: 0.0
         val result = when (currentOp) {
             "+" -> lastValue + currentVal
-            "-" -> lastValue - currentVal
+            "−" -> lastValue - currentVal
             "×" -> lastValue * currentVal
             "÷" -> if (currentVal != 0.0) lastValue / currentVal else Double.NaN
             else -> currentVal
@@ -110,6 +152,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchHome(decoy: Boolean) {
+        AutoLockManager.getInstance().resetTimer()
         val intent = Intent(this, HomeActivity::class.java)
         intent.putExtra("decoy_mode", decoy)
         startActivity(intent)

@@ -8,33 +8,37 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.view.MotionEvent
 import android.view.View
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.shadowcalc.app.databinding.ActivityBrowserBinding
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 class BrowserActivity : AppCompatActivity() {
     private lateinit var binding: ActivityBrowserBinding
     private lateinit var securityManager: SecurityManager
     private lateinit var vaultManager: VaultManager
-    private var dX = 0f
-    private var dY = 0f
-    private val braveUserAgent = "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 Brave/120.0.0.0"
-    private val shortcuts = mutableListOf(
+    private val braveUserAgent = "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+    private val shortcuts = listOf(
         Shortcut("Google", "https://www.google.com", R.drawable.ic_browser),
-        Shortcut("Facebook", "https://www.facebook.com", R.drawable.ic_browser),
-        Shortcut("Amazon", "https://www.amazon.com", R.drawable.ic_browser),
+        Shortcut("GitHub", "https://github.com", R.drawable.ic_browser),
         Shortcut("Reddit", "https://www.reddit.com", R.drawable.ic_browser),
-        Shortcut("Twitter", "https://twitter.com", R.drawable.ic_browser),
+        Shortcut("Hacker News", "https://news.ycombinator.com", R.drawable.ic_browser),
+        Shortcut("DuckDuckGo", "https://duckduckgo.com", R.drawable.ic_browser),
         Shortcut("Wikipedia", "https://www.wikipedia.org", R.drawable.ic_browser)
     )
+    private val recentSites = mutableListOf<RecentSite>()
 
     data class Shortcut(val name: String, val url: String, val iconRes: Int)
+    data class RecentSite(val name: String, val url: String, val time: Long)
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,7 +60,6 @@ class BrowserActivity : AppCompatActivity() {
             setSupportZoom(true)
         }
 
-        // Privacy: disable third-party cookies
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
             setAcceptThirdPartyCookies(binding.webView, false)
@@ -69,14 +72,17 @@ class BrowserActivity : AppCompatActivity() {
             }
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 binding.progressBar.visibility = View.VISIBLE
-                updateFabVisibility(url)
+                updateShieldBadge(url)
                 binding.etUrl.setText(url)
+                binding.layoutHome.visibility = View.GONE
             }
             override fun onPageFinished(view: WebView?, url: String?) {
                 binding.progressBar.visibility = View.GONE
                 binding.etUrl.setText(url)
-                updateFabVisibility(url)
+                updateShieldBadge(url)
+                updateVideoBadge(url)
                 injectVideoDetector()
+                addToRecentSites(url)
             }
         }
 
@@ -88,87 +94,53 @@ class BrowserActivity : AppCompatActivity() {
             }
         }
 
-        // Top bar actions
-        binding.btnExit.setOnClickListener { finish() }
-        binding.btnGo.setOnClickListener { navigateToUrl() }
-        binding.etUrl.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_GO) {
-                navigateToUrl(); true
-            } else false
-        }
+        setupTopBar()
+        setupBottomNav()
+        setupHomePage()
 
-        // Bottom nav
-        binding.btnNavBack.setOnClickListener { if (binding.webView.canGoBack()) binding.webView.goBack() }
-        binding.btnNavForward.setOnClickListener { if (binding.webView.canGoForward()) binding.webView.goForward() }
-        binding.btnNavHome.setOnClickListener { showHomePage() }
-        binding.btnNavTabs.setOnClickListener { Toast.makeText(this, "Tab switcher: 1 tab", Toast.LENGTH_SHORT).show() }
-        binding.btnNavDownloads.setOnClickListener { startActivity(Intent(this, DownloadsActivity::class.java)) }
-        binding.btnNavMenu.setOnClickListener { showBrowserMenu() }
-
-        // How-to banner
-        binding.bannerHowTo.setOnClickListener {
-            AlertDialog.Builder(this, R.style.DarkAlertDialog)
-                .setTitle("How to Download Videos")
-                .setMessage("1. Navigate to a video page (YouTube, Vimeo, etc.)\n2. Wait for the floating download button to appear\n3. Tap it and select your preferred resolution\n4. The video will be saved directly to your hidden vault.")
-                .setPositiveButton("Got it", null)
-                .show()
-        }
-
-        // Floating download button
-        binding.fabDownload.setOnTouchListener { v, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> { dX = v.x - event.rawX; dY = v.y - event.rawY }
-                MotionEvent.ACTION_MOVE -> { v.animate().x(event.rawX + dX).y(event.rawY + dY).setDuration(0).start() }
-                MotionEvent.ACTION_UP -> {
-                    val url = binding.webView.url
-                    if (url != null) triggerVideoDownload(url)
-                }
-            }
-            true
-        }
-
-        // Load search query or home
         val searchQuery = intent.getStringExtra("search_query")
         if (!searchQuery.isNullOrEmpty()) {
-            binding.webView.loadUrl("https://search.brave.com/search?q=${Uri.encode(searchQuery)}")
-            binding.etUrl.setText("https://search.brave.com/search?q=$searchQuery")
+            navigateToUrl("https://search.brave.com/search?q=${Uri.encode(searchQuery)}")
         } else {
             showHomePage()
         }
     }
 
-    private fun showHomePage() {
-        binding.webView.loadUrl("about:blank")
-        binding.layoutHome.visibility = View.VISIBLE
-        binding.fabDownload.visibility = View.GONE
-        setupShortcuts()
-    }
-
-    private fun setupShortcuts() {
-        // In a real app, this would be a RecyclerView. For V4 we use a simplified approach.
-        binding.gridShortcuts.removeAllViews()
-        shortcuts.forEach { shortcut ->
-            val btn = android.widget.Button(this).apply {
-                text = shortcut.name
-                setTextColor(getColor(R.color.text_primary))
-                background = getDrawable(R.drawable.bg_card)
-                setOnClickListener {
-                    binding.layoutHome.visibility = View.GONE
-                    binding.webView.loadUrl(shortcut.url)
-                }
-            }
-            binding.gridShortcuts.addView(btn, android.widget.GridLayout.LayoutParams().apply {
-                width = 0
-                height = android.widget.GridLayout.LayoutParams.WRAP_CONTENT
-                columnSpec = android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED, 1f)
-                rowSpec = android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED)
-                setMargins(8, 8, 8, 8)
-            })
+    private fun setupTopBar() {
+        binding.btnExit.setOnClickListener { finish() }
+        binding.btnGo.setOnClickListener { navigateToUrl(binding.etUrl.text.toString()) }
+        binding.etUrl.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_GO) {
+                navigateToUrl(binding.etUrl.text.toString()); true
+            } else false
         }
     }
 
-    private fun navigateToUrl() {
-        var url = binding.etUrl.text.toString()
+    private fun setupBottomNav() {
+        binding.btnNavBack.setOnClickListener { if (binding.webView.canGoBack()) binding.webView.goBack() }
+        binding.btnNavForward.setOnClickListener { if (binding.webView.canGoForward()) binding.webView.goForward() }
+        binding.btnNavHome.setOnClickListener { showHomePage() }
+        binding.btnNavDownloads.setOnClickListener { startActivity(Intent(this, DownloadsActivity::class.java)) }
+        binding.btnNavMenu.setOnClickListener { showBrowserMenu() }
+    }
+
+    private fun setupHomePage() {
+        binding.recyclerShortcuts.layoutManager = GridLayoutManager(this, 4)
+        binding.recyclerShortcuts.adapter = ShortcutAdapter(shortcuts)
+
+        binding.recyclerRecent.layoutManager = LinearLayoutManager(this)
+        loadRecentSites()
+    }
+
+    private fun showHomePage() {
+        binding.webView.loadUrl("about:blank")
+        binding.layoutHome.visibility = View.VISIBLE
+        binding.cardVideoBadge.visibility = View.GONE
+        loadRecentSites()
+    }
+
+    private fun navigateToUrl(input: String) {
+        var url = input
         if (url.isBlank()) return
         binding.layoutHome.visibility = View.GONE
         if (!url.startsWith("http")) {
@@ -181,14 +153,24 @@ class BrowserActivity : AppCompatActivity() {
         binding.webView.loadUrl(url)
     }
 
-    private fun updateFabVisibility(url: String?) {
+    private fun updateShieldBadge(url: String?) {
+        val isSecure = url != null && (url.startsWith("https://") || url.startsWith("about:blank"))
+        binding.ivShield.setImageResource(if (isSecure) R.drawable.ic_lock else R.drawable.ic_browser)
+        binding.tvShieldStatus.text = if (isSecure) "Shield Active" else "Not Secure"
+        binding.tvShieldStatus.setTextColor(getColor(if (isSecure) R.color.accent else R.color.error))
+    }
+
+    private fun updateVideoBadge(url: String?) {
         val isVideoPage = url != null && (
             url.contains("youtube.com/watch") || url.contains("youtu.be/") ||
             url.contains(".mp4") || url.contains(".m3u8") || url.contains(".webm") ||
             url.contains("vimeo.com") || url.contains("dailymotion.com") ||
             url.contains("tiktok.com") || url.contains("facebook.com/watch")
         )
-        binding.fabDownload.visibility = if (isVideoPage) View.VISIBLE else View.GONE
+        binding.cardVideoBadge.visibility = if (isVideoPage) View.VISIBLE else View.GONE
+        if (isVideoPage) {
+            binding.cardVideoBadge.setOnClickListener { triggerVideoDownload(url!!) }
+        }
     }
 
     private fun injectVideoDetector() {
@@ -227,8 +209,7 @@ class BrowserActivity : AppCompatActivity() {
         AlertDialog.Builder(this, R.style.DarkAlertDialog)
             .setTitle("Download Video")
             .setItems(resolutions) { _, which ->
-                val label = resolutions[which]
-                downloadVideoToVault(url, userAgent, label)
+                downloadVideoToVault(url, userAgent, resolutions[which])
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -305,6 +286,38 @@ class BrowserActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun addToRecentSites(url: String?) {
+        if (url == null || url == "about:blank") return
+        val name = try { Uri.parse(url).host ?: url } catch (_: Exception) { url }
+        recentSites.removeAll { it.url == url }
+        recentSites.add(0, RecentSite(name, url, System.currentTimeMillis()))
+        if (recentSites.size > 10) recentSites.removeLast()
+        saveRecentSites()
+        loadRecentSites()
+    }
+
+    private fun saveRecentSites() {
+        val prefs = getSharedPreferences("browser_prefs", Context.MODE_PRIVATE)
+        val json = recentSites.joinToString("
+") { "${it.name}|${it.url}|${it.time}" }
+        prefs.edit().putString("recent_sites", json).apply()
+    }
+
+    private fun loadRecentSites() {
+        val prefs = getSharedPreferences("browser_prefs", Context.MODE_PRIVATE)
+        val json = prefs.getString("recent_sites", "") ?: ""
+        recentSites.clear()
+        json.split("
+").forEach { line ->
+            val parts = line.split("|")
+            if (parts.size == 3) {
+                recentSites.add(RecentSite(parts[0], parts[1], parts[2].toLongOrNull() ?: 0))
+            }
+        }
+        binding.recyclerRecent.adapter = RecentAdapter(recentSites)
+        binding.tvRecentEmpty.visibility = if (recentSites.isEmpty()) View.VISIBLE else View.GONE
+    }
+
     override fun onBackPressed() {
         if (binding.layoutHome.visibility == View.VISIBLE) {
             finish()
@@ -317,9 +330,38 @@ class BrowserActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // Clear session cache on exit
         binding.webView.clearCache(true)
         CookieManager.getInstance().removeSessionCookies(null)
         binding.webView.destroy()
+    }
+
+    private inner class ShortcutAdapter(private val items: List<Shortcut>) : RecyclerView.Adapter<ShortcutAdapter.VH>() {
+        inner class VH(v: android.view.View) : RecyclerView.ViewHolder(v) {
+            val name: android.widget.TextView = v.findViewById(R.id.tvShortcutName)
+            val icon: ImageView = v.findViewById(R.id.ivShortcutIcon)
+        }
+        override fun onCreateViewHolder(p: ViewGroup, t: Int) = VH(android.view.LayoutInflater.from(p.context).inflate(R.layout.item_shortcut, p, false))
+        override fun onBindViewHolder(h: VH, i: Int) {
+            val item = items[i]
+            h.name.text = item.name
+            h.icon.setImageResource(item.iconRes)
+            h.itemView.setOnClickListener { navigateToUrl(item.url) }
+        }
+        override fun getItemCount() = items.size
+    }
+
+    private inner class RecentAdapter(private val items: List<RecentSite>) : RecyclerView.Adapter<RecentAdapter.VH>() {
+        inner class VH(v: android.view.View) : RecyclerView.ViewHolder(v) {
+            val name: android.widget.TextView = v.findViewById(R.id.tvRecentName)
+            val url: android.widget.TextView = v.findViewById(R.id.tvRecentUrl)
+        }
+        override fun onCreateViewHolder(p: ViewGroup, t: Int) = VH(android.view.LayoutInflater.from(p.context).inflate(R.layout.item_recent, p, false))
+        override fun onBindViewHolder(h: VH, i: Int) {
+            val item = items[i]
+            h.name.text = item.name
+            h.url.text = item.url
+            h.itemView.setOnClickListener { navigateToUrl(item.url) }
+        }
+        override fun getItemCount() = items.size
     }
 }

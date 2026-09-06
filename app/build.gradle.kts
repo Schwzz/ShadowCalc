@@ -12,8 +12,8 @@ android {
         applicationId = "com.shadowcalc.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 4
-        versionName = "4.0.0"
+        versionCode = 5
+        versionName = "5.0.0"
     }
 
     buildTypes {
@@ -44,6 +44,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-process:2.7.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("com.github.bumptech.glide:glide:4.16.0")
@@ -54,6 +55,5 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.biometric:biometric:1.1.0")
     implementation("com.google.code.gson:gson:2.10.1")
 }

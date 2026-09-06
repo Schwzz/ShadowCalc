@@ -5,61 +5,65 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
 import javax.crypto.Cipher
+import javax.crypto.CipherInputStream
+import javax.crypto.CipherOutputStream
 import javax.crypto.spec.IvParameterSpec
-import java.security.SecureRandom
 
-data class Note(val id: String, val title: String, val content: String, val timestamp: Long)
-
-class NoteManager(context: Context, private val securityManager: SecurityManager) {
-    private val file = File(context.filesDir, "notes_v4.enc")
+class NoteManager(private val context: Context, private val securityManager: SecurityManager) {
+    private val notesFile = File(context.filesDir, "notes_v5.enc")
     private val gson = Gson()
 
-    fun loadNotes(): List<Note> {
-        if (!file.exists()) return emptyList()
-        val decrypted = decrypt(file.readBytes()) ?: return emptyList()
-        return try {
-            gson.fromJson(decrypted, object : TypeToken<List<Note>>() {}.type) ?: emptyList()
-        } catch (e: Exception) { emptyList() }
-    }
-
-    fun saveNote(title: String, content: String) {
-        val notes = loadNotes().toMutableList()
-        notes.add(Note(System.currentTimeMillis().toString(), title, content, System.currentTimeMillis()))
-        saveAll(notes)
-    }
-
-    fun updateNote(id: String, title: String, content: String) {
-        val notes = loadNotes().map {
-            if (it.id == id) it.copy(title = title, content = content, timestamp = System.currentTimeMillis()) else it
-        }
-        saveAll(notes)
-    }
-
-    fun deleteNote(id: String) {
-        saveAll(loadNotes().filter { it.id != id })
-    }
-
-    private fun saveAll(notes: List<Note>) {
+    fun saveNotes(notes: List<Note>) {
         val json = gson.toJson(notes)
-        file.writeBytes(encrypt(json))
-    }
-
-    private fun encrypt(data: String): ByteArray {
-        val key = securityManager.deriveVaultKey()
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        val iv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
+        val key = securityManager.deriveVaultKey()
+        val iv = ByteArray(16).apply { java.security.SecureRandom().nextBytes(this) }
         cipher.init(Cipher.ENCRYPT_MODE, key, IvParameterSpec(iv))
-        return iv + cipher.doFinal(data.toByteArray())
+        java.io.FileOutputStream(notesFile).use { fos ->
+            fos.write(iv)
+            javax.crypto.CipherOutputStream(fos, cipher).use { cos ->
+                cos.write(json.toByteArray())
+            }
+        }
     }
 
-    private fun decrypt(bytes: ByteArray): String? {
+    fun loadNotes(): List<Note> {
+        if (!notesFile.exists()) return emptyList()
         return try {
-            val key = securityManager.deriveVaultKey()
-            val iv = bytes.copyOfRange(0, 16)
-            val encrypted = bytes.copyOfRange(16, bytes.size)
             val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            cipher.init(Cipher.DECRYPT_MODE, key, IvParameterSpec(iv))
-            String(cipher.doFinal(encrypted))
-        } catch (e: Exception) { null }
+            val key = securityManager.deriveVaultKey()
+            java.io.FileInputStream(notesFile).use { fis ->
+                val iv = ByteArray(16)
+                fis.read(iv)
+                cipher.init(Cipher.DECRYPT_MODE, key, IvParameterSpec(iv))
+                javax.crypto.CipherInputStream(fis, cipher).use { cis ->
+                    val json = cis.readBytes().toString(Charsets.UTF_8)
+                    val type = object : TypeToken<List<Note>>() {}.type
+                    gson.fromJson<List<Note>>(json, type) ?: emptyList()
+                }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun addNote(title: String, content: String) {
+        val notes = loadNotes().toMutableList()
+        notes.add(Note(System.currentTimeMillis(), title, content))
+        saveNotes(notes)
+    }
+
+    fun deleteNote(id: Long) {
+        val notes = loadNotes().filter { it.id != id }
+        saveNotes(notes)
+    }
+
+    fun updateNote(id: Long, title: String, content: String) {
+        val notes = loadNotes().map {
+            if (it.id == id) it.copy(title = title, content = content) else it
+        }
+        saveNotes(notes)
     }
 }
+
+data class Note(val id: Long, val title: String, val content: String)

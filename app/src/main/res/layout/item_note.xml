@@ -4,23 +4,24 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="?attr/selectableItemBackground">
+    android:background="?attr/selectableItemBackground"
+    android:layout_margin="4dp">
 
     <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="match_parent"
+        android:id="@+id/tvName"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/text_primary"
         android:textSize="16sp"
         android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/tvPreview"
-        android:layout_width="match_parent"
+        android:id="@+id/tvUrl"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/text_secondary"
-        android:textSize="14sp"
+        android:textSize="12sp"
         android:layout_marginTop="4dp"
-        android:ellipsize="end"
-        android:maxLines="2" />
+        android:maxLines="2"
+        android:ellipsize="end" />
 </LinearLayout>

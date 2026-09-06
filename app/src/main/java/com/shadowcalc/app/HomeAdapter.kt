@@ -11,12 +11,15 @@ class HomeAdapter(private val items: List<HomeItem>) : RecyclerView.Adapter<Home
     inner class VH(v: View) : RecyclerView.ViewHolder(v) {
         val icon: ImageView = v.findViewById(R.id.ivIcon)
         val name: TextView = v.findViewById(R.id.tvName)
+        val count: TextView = v.findViewById(R.id.tvCount)
     }
     override fun onCreateViewHolder(p: ViewGroup, t: Int) = VH(LayoutInflater.from(p.context).inflate(R.layout.item_home, p, false))
     override fun onBindViewHolder(h: VH, i: Int) {
         val item = items[i]
         h.icon.setImageResource(item.iconRes)
         h.name.text = item.name
+        h.count.text = if (item.count > 0) "${item.count}" else ""
+        h.count.visibility = if (item.count > 0) View.VISIBLE else View.GONE
         h.itemView.setOnClickListener { item.action() }
     }
     override fun getItemCount() = items.size

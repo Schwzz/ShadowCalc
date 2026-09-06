@@ -11,6 +11,13 @@
         android:scaleType="centerCrop"
         android:background="@color/bg_card" />
 
+    <View
+        android:id="@+id/vOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone" />
+
     <ImageView
         android:id="@+id/ivCheck"
         android:layout_width="32dp"

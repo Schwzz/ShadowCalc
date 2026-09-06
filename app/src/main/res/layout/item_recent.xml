@@ -4,13 +4,13 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:padding="16dp"
+    android:padding="12dp"
     android:background="?attr/selectableItemBackground">
 
     <ImageView
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/ic_trash"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:src="@drawable/ic_browser"
         android:padding="8dp" />
 
     <LinearLayout
@@ -21,17 +21,19 @@
         android:layout_marginStart="12dp">
 
         <TextView
-            android:id="@+id/tvName"
+            android:id="@+id/tvRecentName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
         <TextView
-            android:id="@+id/tvType"
+            android:id="@+id/tvRecentUrl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
     </LinearLayout>
 </LinearLayout>

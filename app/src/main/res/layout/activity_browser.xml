@@ -15,12 +15,11 @@
         android:visibility="gone"
         android:progressTint="@color/accent" />
 
-    <!-- Top Bar: Exit/Back + Pill Address Bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
+        android:padding="12dp"
         android:gravity="center_vertical">
 
         <ImageButton
@@ -40,19 +39,34 @@
             app:cardBackgroundColor="@color/bg_card"
             app:strokeWidth="0dp">
 
-            <EditText
-                android:id="@+id/etUrl"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@null"
-                android:hint="Home page"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_secondary"
-                android:textSize="14sp"
-                android:paddingHorizontal="16dp"
-                android:inputType="textUri"
-                android:imeOptions="actionGo"
-                android:gravity="center_vertical" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/ivShield"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="12dp"
+                    android:src="@drawable/ic_lock" />
+
+                <EditText
+                    android:id="@+id/etUrl"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="Search or enter URL"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:paddingHorizontal="8dp"
+                    android:inputType="textUri"
+                    android:imeOptions="actionGo"
+                    android:gravity="center_vertical" />
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <ImageButton
@@ -64,21 +78,46 @@
             android:contentDescription="Go" />
     </LinearLayout>
 
-    <!-- How-to Download Banner -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/bannerHowTo"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_marginHorizontal="8dp"
-        android:text="How to Download Videos"
-        android:textColor="@android:color/white"
-        android:textSize="12sp"
-        app:backgroundTint="@android:color/holo_blue_dark"
-        app:cornerRadius="8dp"
-        app:icon="@drawable/ic_help"
-        app:iconGravity="textStart" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="8dp">
 
-    <!-- WebView Container -->
+        <TextView
+            android:id="@+id/tvShieldStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Shield Active"
+            android:textColor="@color/accent"
+            android:textSize="12sp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardVideoBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="@color/accent"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Video Detected - Tap to Download"
+                android:textColor="@color/button_equals_text"
+                android:textSize="12sp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp" />
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -89,46 +128,78 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <!-- Home Page Overlay with Shortcuts -->
-        <LinearLayout
+        <androidx.core.widget.NestedScrollView
             android:id="@+id/layoutHome"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
             android:background="@color/bg_dark"
-            android:padding="16dp"
             android:visibility="gone">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Shortcuts"
-                android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <GridLayout
-                android:id="@+id/gridShortcuts"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:columnCount="3" />
-        </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Private Browser"
+                    android:textColor="@color/text_primary"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
 
-        <!-- Floating Download Button -->
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabDownload"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|bottom"
-            android:layout_margin="16dp"
-            android:src="@drawable/ic_download"
-            android:visibility="gone"
-            app:backgroundTint="@color/accent"
-            android:contentDescription="Download" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Your browsing is private &amp; encrypted"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="QUICK ACCESS"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="12dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerShortcuts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="RECENT"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:id="@+id/tvRecentEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No recent sites"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:padding="16dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerRecent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
     </FrameLayout>
 
-    <!-- Bottom Navigation Bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="52dp"
@@ -164,27 +235,6 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_browser"
             android:contentDescription="Home" />
-
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1">
-            <ImageButton
-                android:id="@+id/btnNavTabs"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_file"
-                android:contentDescription="Tabs" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="1"
-                android:textColor="@color/text_primary"
-                android:textSize="10sp"
-                android:textStyle="bold" />
-        </FrameLayout>
 
         <ImageButton
             android:id="@+id/btnNavDownloads"

@@ -6,162 +6,58 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.webkit.MimeTypeMap
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.security.SecureRandom
 import javax.crypto.Cipher
+import javax.crypto.CipherInputStream
+import javax.crypto.CipherOutputStream
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-class VaultManager(context: Context, private val securityManager: SecurityManager) {
-    private val vaultDir = File(context.filesDir, "vault")
-    private val imagesDir = File(vaultDir, "images")
-    private val videosDir = File(vaultDir, "videos")
-    private val audioDir = File(vaultDir, "audio")
-    private val filesDir = File(vaultDir, "files")
-    private val downloadsDir = File(vaultDir, "downloads")
-    private val trashDir = File(context.filesDir, "trash")
-    private val trashImages = File(trashDir, "images")
-    private val trashVideos = File(trashDir, "videos")
-    private val trashAudio = File(trashDir, "audio")
-    private val trashFiles = File(trashDir, "files")
+class VaultManager(private val context: Context, private val securityManager: SecurityManager) {
+    private val vaultDir = File(context.filesDir, "vault").apply { mkdirs() }
+    val imagesDir = File(vaultDir, "images").apply { mkdirs() }
+    val videosDir = File(vaultDir, "videos").apply { mkdirs() }
+    val audioDir = File(vaultDir, "audio").apply { mkdirs() }
+    val filesDir = File(vaultDir, "files").apply { mkdirs() }
+    val trashDir = File(context.filesDir, "trash").apply { mkdirs() }
+    val downloadsDir = File(vaultDir, "downloads").apply { mkdirs() }
 
-    init {
-        listOf(vaultDir, imagesDir, videosDir, audioDir, filesDir, downloadsDir,
-            trashDir, trashImages, trashVideos, trashAudio, trashFiles).forEach { it.mkdirs() }
+    private fun getCipher(mode: Int): Cipher {
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        val key = securityManager.deriveVaultKey()
+        if (mode == Cipher.ENCRYPT_MODE) {
+            val iv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
+            cipher.init(mode, key, IvParameterSpec(iv))
+        } else {
+            cipher.init(mode, key)
+        }
+        return cipher
     }
 
-    private fun getKey(): SecretKeySpec = securityManager.deriveVaultKey()
-
-    fun encryptAndStore(sourceUri: Uri, context: Context, type: String): Boolean {
+    fun encryptAndStore(uri: Uri, ctx: Context, type: String = "file"): Boolean {
         return try {
-            val inputStream = context.contentResolver.openInputStream(sourceUri) ?: return false
-            val bytes = inputStream.readBytes()
-            inputStream.close()
-            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            val iv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
-            cipher.init(Cipher.ENCRYPT_MODE, getKey(), IvParameterSpec(iv))
-            val encrypted = cipher.doFinal(bytes)
-            val fileName = "file_" + System.currentTimeMillis() + ".enc"
             val destDir = when (type) {
                 "image" -> imagesDir
                 "video" -> videosDir
                 "audio" -> audioDir
-                "download" -> downloadsDir
                 else -> filesDir
             }
-            FileOutputStream(File(destDir, fileName)).use { it.write(iv + encrypted) }
-            true
-        } catch (e: Exception) { e.printStackTrace(); false }
-    }
-
-    fun saveDownloadedVideo(bytes: ByteArray, fileName: String): Boolean {
-        return try {
-            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            val iv = ByteArray(16).apply { SecureRandom().nextBytes(this) }
-            cipher.init(Cipher.ENCRYPT_MODE, getKey(), IvParameterSpec(iv))
-            val encrypted = cipher.doFinal(bytes)
-            val outFile = File(downloadsDir, "${fileName}_${System.currentTimeMillis()}.enc")
-            FileOutputStream(outFile).use { it.write(iv + encrypted) }
-            true
-        } catch (e: Exception) { e.printStackTrace(); false }
-    }
-
-    fun decryptFile(file: File): ByteArray? {
-        return try {
-            val allBytes = file.readBytes()
-            if (allBytes.size < 16) return null
-            val iv = allBytes.copyOfRange(0, 16)
-            val encrypted = allBytes.copyOfRange(16, allBytes.size)
-            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            cipher.init(Cipher.DECRYPT_MODE, getKey(), IvParameterSpec(iv))
-            cipher.doFinal(encrypted)
-        } catch (e: Exception) { e.printStackTrace(); null }
-    }
-
-    fun getImages(): List<File> = imagesDir.listFiles()?.sortedByDescending { it.lastModified() } ?: emptyList()
-    fun getVideos(): List<File> = videosDir.listFiles()?.sortedByDescending { it.lastModified() } ?: emptyList()
-    fun getAudio(): List<File> = audioDir.listFiles()?.sortedByDescending { it.lastModified() } ?: emptyList()
-    fun getFiles(): List<File> = filesDir.listFiles()?.sortedByDescending { it.lastModified() } ?: emptyList()
-    fun getDownloads(): List<File> = downloadsDir.listFiles()?.sortedByDescending { it.lastModified() } ?: emptyList()
-    fun getAllVaultFiles(): List<File> = getImages() + getVideos() + getAudio() + getFiles() + getDownloads()
-
-    fun moveToTrash(file: File, type: String): Boolean {
-        val dest = when (type) {
-            "image" -> trashImages
-            "video" -> trashVideos
-            "audio" -> trashAudio
-            else -> trashFiles
-        }
-        return file.renameTo(File(dest, file.name))
-    }
-    fun restoreFromTrash(file: File, type: String): Boolean {
-        val dest = when (type) {
-            "image" -> imagesDir
-            "video" -> videosDir
-            "audio" -> audioDir
-            "download" -> downloadsDir
-            else -> filesDir
-        }
-        return file.renameTo(File(dest, file.name))
-    }
-    fun getTrash(type: String): List<File> {
-        val dir = when (type) {
-            "image" -> trashImages
-            "video" -> trashVideos
-            "audio" -> trashAudio
-            else -> trashFiles
-        }
-        return dir.listFiles()?.sortedByDescending { it.lastModified() } ?: emptyList()
-    }
-    fun getAllTrash(): List<File> = getTrash("image") + getTrash("video") + getTrash("audio") + getTrash("file")
-
-    fun deleteFile(file: File): Boolean = file.delete()
-    fun permanentDelete(file: File): Boolean = file.delete()
-    fun emptyTrash() {
-        listOf(trashImages, trashVideos, trashAudio, trashFiles).forEach { it.listFiles()?.forEach { f -> f.delete() } }
-    }
-
-    fun unhideToPublic(context: Context, file: File, type: String): Boolean {
-        val decrypted = decryptFile(file) ?: return false
-        val mimeType = when (type) {
-            "image" -> "image/*"
-            "video" -> "video/*"
-            "audio" -> "audio/*"
-            else -> "*/*"
-        }
-        val displayName = file.name.removeSuffix(".enc").removePrefix("file_")
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val collection = when (type) {
-                    "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-                    "audio" -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-                    else -> MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            val fileName = "file_${System.currentTimeMillis()}.enc"
+            val destFile = File(destDir, fileName)
+            val cipher = getCipher(Cipher.ENCRYPT_MODE)
+            val iv = cipher.iv
+            ctx.contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(destFile).use { fos ->
+                    fos.write(iv)
+                    CipherOutputStream(fos, cipher).use { cos ->
+                        input.copyTo(cos)
+                    }
                 }
-                val values = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
-                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                    if (type == "file") put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                }
-                val uri = context.contentResolver.insert(collection, values)
-                uri?.let {
-                    context.contentResolver.openOutputStream(it)?.use { os -> os.write(decrypted) }
-                }
-            } else {
-                val destDir = when (type) {
-                    "image" -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                    "video" -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-                    "audio" -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-                    else -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                }
-                val outFile = File(destDir, displayName)
-                FileOutputStream(outFile).use { it.write(decrypted) }
             }
-            file.delete()
             true
         } catch (e: Exception) {
             e.printStackTrace()
@@ -169,8 +65,119 @@ class VaultManager(context: Context, private val securityManager: SecurityManage
         }
     }
 
-    fun isCriticalDirectory(file: File): Boolean {
-        val critical = listOf(vaultDir, imagesDir, videosDir, audioDir, filesDir, downloadsDir, trashDir)
-        return critical.any { it.absolutePath == file.absolutePath }
+    fun decryptFile(file: File): File? {
+        return try {
+            val tempFile = File(context.cacheDir, "temp_${System.currentTimeMillis()}")
+            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+            val key = securityManager.deriveVaultKey()
+            FileInputStream(file).use { fis ->
+                val iv = ByteArray(16)
+                fis.read(iv)
+                cipher.init(Cipher.DECRYPT_MODE, key, IvParameterSpec(iv))
+                FileOutputStream(tempFile).use { fos ->
+                    CipherInputStream(fis, cipher).use { cis ->
+                        cis.copyTo(fos)
+                    }
+                }
+            }
+            tempFile
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun getImages(): List<File> = imagesDir.listFiles()?.toList() ?: emptyList()
+    fun getVideos(): List<File> = videosDir.listFiles()?.toList() ?: emptyList()
+    fun getAudio(): List<File> = audioDir.listFiles()?.toList() ?: emptyList()
+    fun getFiles(): List<File> = filesDir.listFiles()?.toList() ?: emptyList()
+    fun getDownloads(): List<File> = downloadsDir.listFiles()?.toList() ?: emptyList()
+
+    fun moveToTrash(file: File, type: String) {
+        val trashTypeDir = File(trashDir, type).apply { mkdirs() }
+        file.renameTo(File(trashTypeDir, file.name))
+    }
+
+    fun getAllTrash(): List<File> {
+        return trashDir.listFiles()?.flatMap { it.listFiles()?.toList() ?: emptyList() } ?: emptyList()
+    }
+
+    fun emptyTrash() {
+        trashDir.listFiles()?.forEach { it.deleteRecursively() }
+    }
+
+    fun restoreFromTrash(file: File, type: String): Boolean {
+        val destDir = when (type) {
+            "image" -> imagesDir
+            "video" -> videosDir
+            "audio" -> audioDir
+            else -> filesDir
+        }
+        return file.renameTo(File(destDir, file.name))
+    }
+
+    fun unhideToPublic(ctx: Context, file: File, type: String): Boolean {
+        return try {
+            val decrypted = decryptFile(file) ?: return false
+            val mimeType = when (type) {
+                "image" -> "image/*"
+                "video" -> "video/*"
+                "audio" -> "audio/*"
+                else -> "*/*"
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, file.name.removePrefix("file_").removeSuffix(".enc"))
+                    put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                }
+                val uri = ctx.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                uri?.let {
+                    ctx.contentResolver.openOutputStream(it)?.use { os ->
+                        FileInputStream(decrypted).use { input -> input.copyTo(os) }
+                    }
+                }
+            } else {
+                val dest = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), file.name.removePrefix("file_").removeSuffix(".enc"))
+                decrypted.copyTo(dest, overwrite = true)
+            }
+            decrypted.delete()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun saveDownloadedVideo(bytes: ByteArray, fileName: String): Boolean {
+        return try {
+            val destFile = File(videosDir, "file_${System.currentTimeMillis()}.enc")
+            val cipher = getCipher(Cipher.ENCRYPT_MODE)
+            val iv = cipher.iv
+            FileOutputStream(destFile).use { fos ->
+                fos.write(iv)
+                CipherOutputStream(fos, cipher).use { cos ->
+                    cos.write(bytes)
+                }
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun getStorageBreakdown(): Map<String, Long> {
+        return mapOf(
+            "image" to (imagesDir.listFiles()?.sumOf { it.length() } ?: 0L),
+            "video" to (videosDir.listFiles()?.sumOf { it.length() } ?: 0L),
+            "audio" to (audioDir.listFiles()?.sumOf { it.length() } ?: 0L),
+            "file" to (filesDir.listFiles()?.sumOf { it.length() } ?: 0L),
+            "download" to (downloadsDir.listFiles()?.sumOf { it.length() } ?: 0L)
+        )
+    }
+
+    fun getTotalStorageUsed(): Long {
+        return getStorageBreakdown().values.sum()
     }
 }

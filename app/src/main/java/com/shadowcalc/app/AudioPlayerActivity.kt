@@ -2,91 +2,98 @@ package com.shadowcalc.app
 
 import android.media.MediaPlayer
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.shadowcalc.app.databinding.ActivityAudioPlayerBinding
+import com.shadowcalc.app.databinding.ActivityVaultBinding
 import java.io.File
+import java.util.Timer
+import java.util.TimerTask
 
 class AudioPlayerActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityAudioPlayerBinding
-    private lateinit var securityManager: SecurityManager
-    private lateinit var vaultManager: VaultManager
     private var mediaPlayer: MediaPlayer? = null
-    private val handler = Handler(Looper.getMainLooper())
-    private var runnable: Runnable? = null
+    private var timer: Timer? = null
+    private lateinit var vaultManager: VaultManager
+    private lateinit var securityManager: SecurityManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityAudioPlayerBinding.inflate(layoutInflater)
+        val binding = ActivityVaultBinding.inflate(layoutInflater)
         setContentView(binding.root)
         securityManager = SecurityManager(this)
         vaultManager = VaultManager(this, securityManager)
+        binding.tvTitle.text = "Audio"
+        binding.btnBack.setOnClickListener { finish() }
+        binding.btnAdd.visibility = View.GONE
+        binding.recyclerView.visibility = View.GONE
+        binding.tvEmpty.visibility = View.GONE
+        binding.tvCount.visibility = View.GONE
+
         val path = intent.getStringExtra("path") ?: return finish()
         val file = File(path)
         val decrypted = vaultManager.decryptFile(file)
-        if (decrypted == null) {
-            Toast.makeText(this, "Cannot decrypt", Toast.LENGTH_SHORT).show()
-            return finish()
-        }
-        val temp = File(cacheDir, "temp_audio_" + System.currentTimeMillis() + ".mp3")
-        temp.writeBytes(decrypted)
-        binding.tvTitle.text = file.name.removeSuffix(".enc").removePrefix("file_")
-        binding.btnBack.setOnClickListener { finish() }
+        decrypted?.let {
+            val container = android.widget.LinearLayout(this)
+            container.orientation = android.widget.LinearLayout.VERTICAL
+            container.gravity = android.view.Gravity.CENTER
+            container.layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
 
-        mediaPlayer = MediaPlayer().apply {
-            setDataSource(temp.absolutePath)
-            prepare()
-            binding.seekBar.max = duration
-            binding.tvTotal.text = formatTime(duration)
-            start()
-            binding.btnPlayPause.setImageResource(R.drawable.ic_pause)
-        }
+            val title = android.widget.TextView(this)
+            title.text = file.name.removePrefix("file_").removeSuffix(".enc")
+            title.textSize = 18f
+            title.setTextColor(getColor(R.color.text_primary))
+            title.gravity = android.view.Gravity.CENTER
+            container.addView(title)
 
-        binding.btnPlayPause.setOnClickListener {
-            mediaPlayer?.let {
-                if (it.isPlaying) {
-                    it.pause()
-                    binding.btnPlayPause.setImageResource(R.drawable.ic_play)
-                } else {
-                    it.start()
-                    binding.btnPlayPause.setImageResource(R.drawable.ic_pause)
+            val seekBar = SeekBar(this)
+            seekBar.layoutParams = android.widget.LinearLayout.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT).apply { setMargins(32, 32, 32, 32) }
+            container.addView(seekBar)
+
+            val btnPlay = android.widget.Button(this)
+            btnPlay.text = "Play"
+            btnPlay.setOnClickListener {
+                mediaPlayer?.let { mp ->
+                    if (mp.isPlaying) { mp.pause(); btnPlay.text = "Play" }
+                    else { mp.start(); btnPlay.text = "Pause" }
                 }
             }
-        }
+            container.addView(btnPlay)
 
-        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) mediaPlayer?.seekTo(progress)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
+            binding.root.addView(container)
 
-        runnable = Runnable {
-            mediaPlayer?.let {
-                if (it.isPlaying) {
-                    binding.seekBar.progress = it.currentPosition
-                    binding.tvCurrent.text = formatTime(it.currentPosition)
+            try {
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(it.absolutePath)
+                    prepare()
+                    seekBar.max = duration
+                    start()
+                    btnPlay.text = "Pause"
                 }
+                timer = Timer().apply {
+                    scheduleAtFixedRate(object : TimerTask() {
+                        override fun run() {
+                            runOnUiThread { mediaPlayer?.let { mp -> seekBar.progress = mp.currentPosition } }
+                        }
+                    }, 0, 500)
+                }
+                seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                        if (fromUser) mediaPlayer?.seekTo(progress)
+                    }
+                    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+                })
+            } catch (e: Exception) {
+                Toast.makeText(this, "Cannot play audio", Toast.LENGTH_SHORT).show()
+                finish()
             }
-            handler.postDelayed(runnable!!, 500)
-        }
-        handler.post(runnable!!)
-    }
-
-    private fun formatTime(ms: Int): String {
-        val sec = ms / 1000
-        val min = sec / 60
-        val s = sec % 60
-        return String.format("%02d:%02d", min, s)
+        } ?: finish()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        runnable?.let { handler.removeCallbacks(it) }
+        timer?.cancel()
         mediaPlayer?.release()
         mediaPlayer = null
     }

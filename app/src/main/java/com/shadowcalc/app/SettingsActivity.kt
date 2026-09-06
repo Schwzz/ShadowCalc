@@ -1,8 +1,8 @@
 package com.shadowcalc.app
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -14,7 +14,7 @@ import java.io.File
 class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var securityManager: SecurityManager
-    private lateinit var biometricHelper: BiometricHelper
+    private lateinit var vaultManager: VaultManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,25 +22,60 @@ class SettingsActivity : AppCompatActivity() {
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         securityManager = SecurityManager(this)
-        biometricHelper = BiometricHelper(this)
+        vaultManager = VaultManager(this, securityManager)
         binding.btnBack.setOnClickListener { finish() }
 
         refreshUI()
+        setupStorageSection()
+        setupAutoLock()
 
         binding.btnChangePin.setOnClickListener { showChangePinDialog() }
         binding.btnDecoyPin.setOnClickListener { showDecoyPinDialog() }
         binding.btnRecovery.setOnClickListener { showRecoveryDialog() }
         binding.btnForgotPin.setOnClickListener { showForgotPinDialog() }
-        binding.btnBiometric.setOnClickListener { toggleBiometric() }
         binding.btnTheme.setOnClickListener { showThemePicker() }
         binding.btnReset.setOnClickListener { showResetDialog() }
     }
 
     private fun refreshUI() {
-        binding.switchBiometric.isChecked = securityManager.isBiometricEnabled()
         binding.tvDecoyStatus.text = if (securityManager.hasDecoyPin()) "Active" else "Not set"
         val accentName = ThemeManager.getAccentNameList().find { it.first == securityManager.getThemeAccent() }?.second ?: "Neon Green"
         binding.tvTheme.text = accentName
+    }
+
+    private fun setupStorageSection() {
+        val breakdown = vaultManager.getStorageBreakdown()
+        val totalUsed = breakdown.values.sum()
+        binding.tvStorageTotal.text = "Used ${formatSize(totalUsed)}"
+        binding.tvPhotoSize.text = "Photos: ${formatSize(breakdown["image"] ?: 0)}"
+        binding.tvVideoSize.text = "Videos: ${formatSize(breakdown["video"] ?: 0)}"
+        binding.tvAudioSize.text = "Audio: ${formatSize(breakdown["audio"] ?: 0)}"
+        binding.tvOtherSize.text = "Other: ${formatSize(breakdown["file"] ?: 0)}"
+        val percent = ((totalUsed.toFloat() / (10L * 1024 * 1024 * 1024)) * 100).toInt().coerceAtMost(100)
+        binding.progressStorage.progress = percent
+    }
+
+    private fun setupAutoLock() {
+        val minutes = securityManager.getAutoLockMinutes()
+        binding.tvAutoLockValue.text = "$minutes min"
+        binding.seekAutoLock.progress = minutes
+        binding.seekAutoLock.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val value = progress.coerceAtLeast(1)
+                binding.tvAutoLockValue.text = "$value min"
+                securityManager.setAutoLockMinutes(value)
+                AutoLockManager.getInstance().updateAutoLockMinutes(value)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
+    private fun formatSize(bytes: Long): String {
+        if (bytes < 1024) return "$bytes B"
+        if (bytes < 1024 * 1024) return "${bytes / 1024} KB"
+        if (bytes < 1024 * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024.0))
+        return String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
     }
 
     private fun showChangePinDialog() {
@@ -130,18 +165,6 @@ class SettingsActivity : AppCompatActivity() {
             .setNegativeButton("Cancel", null).show()
     }
 
-    private fun toggleBiometric() {
-        if (!biometricHelper.canAuthenticate()) {
-            Toast.makeText(this, "Biometric not available", Toast.LENGTH_SHORT).show()
-            binding.switchBiometric.isChecked = false
-            return
-        }
-        val enabled = !securityManager.isBiometricEnabled()
-        securityManager.setBiometricEnabled(enabled)
-        binding.switchBiometric.isChecked = enabled
-        Toast.makeText(this, if (enabled) "Biometric enabled" else "Biometric disabled", Toast.LENGTH_SHORT).show()
-    }
-
     private fun showThemePicker() {
         val accents = ThemeManager.getAccentNameList()
         val names = accents.map { it.second }.toTypedArray()
@@ -164,8 +187,8 @@ class SettingsActivity : AppCompatActivity() {
             .setMessage("This will delete ALL hidden files, notes, and reset PIN to 1234. Cannot be undone.")
             .setPositiveButton("Reset") { _, _ ->
                 securityManager.resetToDefault()
-                VaultManager(this, securityManager).emptyTrash()
-                listOf("vault", "trash", "notes_v3.enc", "passwords_v3.enc", "intruders").forEach { File(filesDir, it).deleteRecursively() }
+                vaultManager.emptyTrash()
+                listOf("vault", "trash", "notes_v5.enc", "passwords_v5.enc").forEach { File(filesDir, it).deleteRecursively() }
                 Toast.makeText(this, "App reset complete", Toast.LENGTH_SHORT).show()
                 finishAffinity()
             }
