@@ -30,7 +30,7 @@ class SearchActivity : AppCompatActivity() {
         noteManager = NoteManager(this, securityManager)
 
         val query = intent.getStringExtra("query") ?: ""
-        binding.tvQuery.text = "Results for $query"
+        binding.tvQuery.text = "Results for "$query""
         binding.btnBack.setOnClickListener { finish() }
 
         performSearch(query)

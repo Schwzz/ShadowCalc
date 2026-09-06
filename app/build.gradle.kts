@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.shadowcalc"
+    namespace = "com.shadowcalc.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.shadowcalc"
+        applicationId = "com.shadowcalc.app"
         minSdk = 24
         targetSdk = 34
         versionCode = 4
@@ -34,7 +34,6 @@ android {
     }
     buildFeatures {
         viewBinding = true
-        dataBinding = true
     }
 }
 
