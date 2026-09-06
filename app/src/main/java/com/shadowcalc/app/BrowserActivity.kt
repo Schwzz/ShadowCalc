@@ -298,8 +298,7 @@ class BrowserActivity : AppCompatActivity() {
 
     private fun saveRecentSites() {
         val prefs = getSharedPreferences("browser_prefs", Context.MODE_PRIVATE)
-        val json = recentSites.joinToString("
-") { "${it.name}|${it.url}|${it.time}" }
+        val json = recentSites.joinToString("\n") { "${it.name}|${it.url}|${it.time}" }
         prefs.edit().putString("recent_sites", json).apply()
     }
 
@@ -307,8 +306,7 @@ class BrowserActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("browser_prefs", Context.MODE_PRIVATE)
         val json = prefs.getString("recent_sites", "") ?: ""
         recentSites.clear()
-        json.split("
-").forEach { line ->
+        json.split("\n").forEach { line ->
             val parts = line.split("|")
             if (parts.size == 3) {
                 recentSites.add(RecentSite(parts[0], parts[1], parts[2].toLongOrNull() ?: 0))
