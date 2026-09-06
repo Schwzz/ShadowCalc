@@ -1,5 +1,6 @@
 package com.shadowcalc.app
 
+import android.content.Intent
 import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.Context
