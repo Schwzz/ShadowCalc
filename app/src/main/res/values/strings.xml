@@ -19,8 +19,4 @@
     <string name="add">Add</string>
     <string name="unhide">Unhide</string>
     <string name="how_to_download">How to Download Videos</string>
-    
-    <style name="DarkAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
-        <!-- Customize as needed -->
-    </style>
 </resources>
